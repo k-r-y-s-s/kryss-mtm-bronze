@@ -1,16 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Loading Screen -->
+    <!-- LOADING SCREEN (5-10 seconds after login as specified) -->
     <div class="loading-screen" id="loadingScreen">
         <div>
-            <div class="spinner"></div>
-            <h2 style="margin-top: 20px;">Loading Dashboard...</h2>
+            <div class="loading-spinner"></div>
+            <h2>Preparing Your Dashboard</h2>
+            <p>Loading tenant data, recent activity, and financial overview...</p>
+            <p class="small-text">This takes 5-10 seconds to ensure all data is properly loaded.</p>
         </div>
     </div>
 
@@ -18,27 +22,27 @@
         <div class="auth-box">
             <div class="auth-header">
                 <h2>🏠 My Tenant Manager</h2>
-                <p>Sign in to your account</p>
+                <p>Bronze Tier - Professional Login</p>
             </div>
             
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" required>
+                    <input type="email" id="email" required placeholder="landlord@example.com">
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required>
+                    <input type="password" id="password" required placeholder="••••••••">
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    Sign In
+                <button type="submit" class="btn btn-primary btn-block">
+                    Sign In to Dashboard
                 </button>
             </form>
             
             <div class="auth-links">
-                <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+                <p>Don't have an account? <a href="signup.html">Start 7-day free trial</a></p>
                 <p><a href="index.html">← Back to Home</a></p>
             </div>
         </div>
@@ -50,10 +54,17 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
         const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
         
+        // Hide loading screen initially
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
         // Check if already logged in
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                window.location.href = 'dashboard.html';
+                // If already logged in, show loading and redirect
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 7000); // 7 seconds as specified
             }
         });
         
@@ -63,9 +74,6 @@
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const loadingScreen = document.getElementById('loadingScreen');
-            
-            loadingScreen.style.display = 'flex';
             
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -75,13 +83,15 @@
                 
                 if (error) throw error;
                 
-                // Wait 5 seconds before redirecting
+                // Show loading screen for 5-10 seconds as specified
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                
+                // Wait 7 seconds (midpoint of 5-10) then redirect
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 5000);
+                }, 7000);
                 
             } catch (error) {
-                loadingScreen.style.display = 'none';
                 alert('Login failed: ' + error.message);
             }
         });
