@@ -1,54 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - My Tenant Manager</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="auth-container">
-        <div class="auth-card">
+        <div class="auth-box">
             <div class="auth-header">
-                <h1>🏠 Create Account</h1>
+                <h2>Create Account</h2>
                 <p>Start your 7-day free trial</p>
             </div>
             
-            <form id="signupForm" class="auth-form">
+            <form id="signupForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" required placeholder="your@email.com">
+                    <input type="email" id="email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="••••••••" minlength="6">
+                    <label for="password">Password (min. 6 characters)</label>
+                    <input type="password" id="password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
                     <label for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" required placeholder="••••••••">
+                    <input type="password" id="confirmPassword" required>
                 </div>
                 
-                <div class="form-check">
-                    <input type="checkbox" id="terms" required>
-                    <label for="terms">
-                        I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                <div style="margin: 20px 0;">
+                    <input type="checkbox" id="terms" required style="width: auto;">
+                    <label for="terms" style="display: inline; font-weight: normal;">
+                        I agree to the Terms of Service
                     </label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Create Account
+                </button>
             </form>
             
-            <div class="auth-footer">
-                <p>Already have an account? <a href="login.html">Sign in here</a></p>
+            <div class="auth-links">
+                <p>Already have an account? <a href="login.html">Login here</a></p>
                 <p><a href="index.html">← Back to Home</a></p>
             </div>
         </div>
     </div>
     
-    <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+        
+        // Handle signup
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                // Create user profile
+                if (data.user) {
+                    await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            id: data.user.id, 
+                            email: data.user.email
+                        }]);
+                }
+                
+                alert('Account created successfully! Please login.');
+                window.location.href = 'login.html';
+                
+            } catch (error) {
+                alert('Signup failed: ' + error.message);
+            }
+        });
+    </script>
 </body>
 </html>
