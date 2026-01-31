@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -9,87 +11,136 @@
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
     
-    <!-- Sidebar -->
+    <!-- SIDEBAR (Global Component - Fixed on desktop, collapsible on mobile) -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>🏠 MTM</h2>
+            <h2>🏠 My Tenant Manager</h2>
+            <p class="sidebar-subtitle">Bronze Tier Dashboard</p>
         </div>
         
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item active">📊 Dashboard</a>
-            <a href="tenants.html" class="nav-item">👥 Tenants</a>
-            <a href="utilities.html" class="nav-item">⚡ Utilities</a>
-            <a href="rent.html" class="nav-item">💰 Rent</a>
-            <a href="payments.html" class="nav-item">💳 Payments</a>
-            <a href="ledger.html" class="nav-item">📒 Ledger</a>
+            <a href="dashboard.html" class="nav-link active">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="tenants.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Tenants</span>
+            </a>
+            <a href="utilities.html" class="nav-link">
+                <span class="nav-icon">⚡</span>
+                <span>Utilities</span>
+            </a>
+            <a href="rent.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Rent</span>
+            </a>
+            <a href="payments.html" class="nav-link">
+                <span class="nav-icon">💳</span>
+                <span>Payments</span>
+            </a>
+            <a href="ledger.html" class="nav-link">
+                <span class="nav-icon">📒</span>
+                <span>Ledger</span>
+            </a>
         </nav>
         
         <div class="sidebar-footer">
-            <button onclick="logout()" class="btn btn-primary" style="width: 100%;">
+            <div class="user-info" id="sidebarUserInfo">
+                <p><strong>Loading...</strong></p>
+                <p class="small-text">Bronze Tier</p>
+            </div>
+            <button onclick="logout()" class="btn btn-outline" style="width: 100%; margin-top: 1rem;">
                 🚪 Logout
             </button>
         </div>
     </div>
     
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="page-header">
-            <h1>Dashboard</h1>
-            <div id="userEmail">Loading...</div>
+            <div>
+                <h1>Dashboard</h1>
+                <p class="small-text">Quick financial overview - Not analytics</p>
+            </div>
+            <div class="trial-info" id="trialInfo">
+                <span class="status-pill status-active">7-Day Trial Active</span>
+            </div>
         </div>
         
-        <!-- Stats -->
+        <!-- STATS GRID (Monthly totals as specified) -->
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Monthly Rent Total</h3>
-                <div class="stat-number" id="monthlyRent">₱0.00</div>
+                <div class="stat-number" id="monthlyRentTotal">₱0.00</div>
+                <span class="stat-trend">From all active tenants</span>
             </div>
             
             <div class="stat-card">
-                <h3>Monthly Utilities</h3>
-                <div class="stat-number" id="monthlyUtilities">₱0.00</div>
+                <h3>Monthly Utilities Total</h3>
+                <div class="stat-number" id="monthlyUtilitiesTotal">₱0.00</div>
+                <span class="stat-trend">Electric + Water + Wi-Fi</span>
             </div>
             
             <div class="stat-card">
                 <h3>Payments Received</h3>
                 <div class="stat-number" id="paymentsReceived">₱0.00</div>
+                <span class="stat-trend">Last 30 days</span>
             </div>
             
             <div class="stat-card">
                 <h3>Active Tenants</h3>
-                <div class="stat-number" id="activeTenants">0</div>
+                <div class="stat-number" id="activeTenantsCount">0</div>
+                <span class="stat-trend">With positive balance</span>
             </div>
         </div>
         
-        <!-- Needs Attention -->
-        <div class="table-container" style="margin-bottom: 30px;">
-            <h2 style="padding: 20px; margin: 0;">⚠️ Needs Attention</h2>
+        <!-- NEEDS ATTENTION SECTION (As specified) -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2>⚠️ Needs Attention</h2>
+                <span class="small-text">Tenants requiring immediate action</span>
+            </div>
             <table class="data-table">
-                <tbody id="attentionList">
+                <thead>
                     <tr>
-                        <td colspan="3" style="text-align: center; padding: 40px;">
-                            No issues found. All tenants are up to date.
+                        <th>Tenant</th>
+                        <th>Issue</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="needsAttentionTable">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem;">
+                            Loading attention items...
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
         
-        <!-- Recent Activity -->
+        <!-- RECENT ACTIVITY SECTION (As specified) -->
         <div class="table-container">
-            <h2 style="padding: 20px; margin: 0;">📋 Recent Activity</h2>
+            <div class="table-header">
+                <h2>📋 Recent Activity Log</h2>
+                <span class="small-text">Chronological transaction history</span>
+            </div>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Date</th>
                         <th>Tenant</th>
                         <th>Type</th>
+                        <th>Category</th>
                         <th>Amount</th>
+                        <th>Notes</th>
                     </tr>
                 </thead>
-                <tbody id="activityList">
+                <tbody id="recentActivityTable">
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px;">
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
                             Loading recent activity...
                         </td>
                     </tr>
@@ -105,81 +156,267 @@
         const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
         
         let currentUser = null;
+        let currentProfile = null;
         
         // Check authentication
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (!session) {
                 window.location.href = 'login.html';
             } else {
                 currentUser = session.user;
-                document.getElementById('userEmail').textContent = session.user.email;
-                loadDashboardData();
+                await loadUserProfile();
+                await loadDashboardData();
+                
+                // Update user info in sidebar
+                document.getElementById('sidebarUserInfo').innerHTML = `
+                    <p><strong>${currentProfile?.email || currentUser.email}</strong></p>
+                    <p class="small-text">${currentProfile?.subscription_tier || 'Bronze'} Tier</p>
+                `;
+                
+                // Update trial info
+                if (currentProfile?.trial_ends_at) {
+                    const trialEnd = new Date(currentProfile.trial_ends_at);
+                    const today = new Date();
+                    const daysLeft = Math.ceil((trialEnd - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysLeft > 0) {
+                        document.getElementById('trialInfo').innerHTML = `
+                            <span class="status-pill status-active">${daysLeft} days left in trial</span>
+                        `;
+                    }
+                }
             }
         });
         
-        // Load dashboard data
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) throw error;
+                currentProfile = data;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+        
+        // Load dashboard data (EXACT as specified)
         async function loadDashboardData() {
             try {
-                // Get active tenants
+                // 1. Get active tenants and calculate monthly rent total
                 const { data: tenants, error: tenantsError } = await supabase
                     .from('tenants')
-                    .select('*')
+                    .select('id, name, monthly_rent, status')
                     .eq('user_id', currentUser.id)
                     .eq('status', 'active');
                 
                 if (tenantsError) throw tenantsError;
                 
-                // Calculate monthly rent
-                let monthlyRent = 0;
-                if (tenants) {
-                    tenants.forEach(tenant => {
-                        monthlyRent += parseFloat(tenant.monthly_rent);
-                    });
-                }
+                // Calculate monthly rent total
+                let monthlyRentTotal = 0;
+                tenants.forEach(tenant => {
+                    monthlyRentTotal += parseFloat(tenant.monthly_rent);
+                });
                 
-                // Update dashboard
-                document.getElementById('monthlyRent').textContent = 
-                    '₱' + monthlyRent.toLocaleString('en-PH');
-                document.getElementById('activeTenants').textContent = tenants ? tenants.length : 0;
+                document.getElementById('monthlyRentTotal').textContent = 
+                    '₱' + monthlyRentTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                document.getElementById('activeTenantsCount').textContent = tenants.length;
                 
-                // Sample data (you'll replace with real data later)
-                document.getElementById('monthlyUtilities').textContent = '₱2,500.00';
-                document.getElementById('paymentsReceived').textContent = '₱15,000.00';
+                // 2. Get current month utilities total
+                const now = new Date();
+                const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 
-                // Sample recent activity
-                const activityList = document.getElementById('activityList');
-                activityList.innerHTML = `
-                    <tr>
-                        <td>Today</td>
-                        <td>Juan Dela Cruz</td>
-                        <td>Rent Payment</td>
-                        <td>₱5,000.00</td>
-                    </tr>
-                    <tr>
-                        <td>Yesterday</td>
-                        <td>Maria Santos</td>
-                        <td>Electric Bill</td>
-                        <td>₱1,200.00</td>
-                    </tr>
-                    <tr>
-                        <td>Dec 1, 2024</td>
-                        <td>Pedro Reyes</td>
-                        <td>Water Bill</td>
-                        <td>₱800.00</td>
-                    </tr>
-                `;
+                const { data: utilities, error: utilitiesError } = await supabase
+                    .from('utilities')
+                    .select('amount')
+                    .eq('user_id', currentUser.id)
+                    .gte('period_end', firstDayOfMonth.toISOString().split('T')[0])
+                    .lte('period_end', lastDayOfMonth.toISOString().split('T')[0]);
+                
+                if (utilitiesError) throw utilitiesError;
+                
+                let monthlyUtilitiesTotal = 0;
+                utilities.forEach(utility => {
+                    monthlyUtilitiesTotal += parseFloat(utility.amount);
+                });
+                
+                document.getElementById('monthlyUtilitiesTotal').textContent = 
+                    '₱' + monthlyUtilitiesTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                
+                // 3. Get payments received in last 30 days
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                
+                const { data: payments, error: paymentsError } = await supabase
+                    .from('payments')
+                    .select('amount')
+                    .eq('user_id', currentUser.id)
+                    .gte('payment_date', thirtyDaysAgo.toISOString().split('T')[0]);
+                
+                if (paymentsError) throw paymentsError;
+                
+                let paymentsReceived = 0;
+                payments.forEach(payment => {
+                    paymentsReceived += parseFloat(payment.amount);
+                });
+                
+                document.getElementById('paymentsReceived').textContent = 
+                    '₱' + paymentsReceived.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                
+                // 4. Load "Needs Attention" (tenants with negative balance)
+                await loadNeedsAttention();
+                
+                // 5. Load recent activity
+                await loadRecentActivity();
                 
             } catch (error) {
-                console.error('Error loading dashboard:', error);
+                console.error('Error loading dashboard data:', error);
             }
         }
         
-        // Toggle sidebar for mobile
+        // Load "Needs Attention" section (tenants with negative balance)
+        async function loadNeedsAttention() {
+            try {
+                // Get tenants with negative running balance
+                const { data: ledgerEntries, error } = await supabase
+                    .from('ledger_entries')
+                    .select(`
+                        tenant_id,
+                        running_balance,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Find unique tenants with their latest balance
+                const tenantBalances = {};
+                ledgerEntries.forEach(entry => {
+                    if (!tenantBalances[entry.tenant_id]) {
+                        tenantBalances[entry.tenant_id] = {
+                            name: entry.tenants?.name || 'Unknown',
+                            balance: entry.running_balance
+                        };
+                    }
+                });
+                
+                // Filter tenants with negative balance
+                const needsAttention = Object.values(tenantBalances)
+                    .filter(tenant => tenant.balance < 0)
+                    .slice(0, 5); // Show top 5
+                
+                const tbody = document.getElementById('needsAttentionTable');
+                
+                if (needsAttention.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem;">
+                                No issues found. All tenants are up to date.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                needsAttention.forEach(tenant => {
+                    html += `
+                        <tr>
+                            <td><strong>${tenant.name}</strong></td>
+                            <td>Negative Balance</td>
+                            <td class="currency currency-negative">-₱${Math.abs(tenant.balance).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td>Immediate</td>
+                            <td>
+                                <button class="action-btn edit" onclick="viewTenantLedger('${tenant.tenant_id}')">
+                                    View Ledger
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading needs attention:', error);
+            }
+        }
+        
+        // Load recent activity log
+        async function loadRecentActivity() {
+            try {
+                const { data: activities, error } = await supabase
+                    .from('ledger_entries')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('recentActivityTable');
+                
+                if (!activities || activities.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                No recent activity
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                activities.forEach(activity => {
+                    const date = new Date(activity.entry_date);
+                    const typeClass = activity.type === 'payment' ? 'currency-positive' : 'currency-negative';
+                    const sign = activity.type === 'payment' ? '+' : '-';
+                    
+                    html += `
+                        <tr>
+                            <td>${date.toLocaleDateString('en-PH')}</td>
+                            <td>${activity.tenants?.name || 'N/A'}</td>
+                            <td>
+                                <span class="status-pill ${activity.type === 'payment' ? 'status-active' : 'status-moved-out'}">
+                                    ${activity.type}
+                                </span>
+                            </td>
+                            <td>${activity.category}</td>
+                            <td class="currency ${typeClass}">
+                                ${sign}₱${parseFloat(activity.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td>${activity.description || ''}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+            }
+        }
+        
+        // Helper functions
+        function viewTenantLedger(tenantId) {
+            localStorage.setItem('selectedTenantId', tenantId);
+            window.location.href = 'ledger.html';
+        }
+        
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
         }
         
-        // Logout function
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = 'login.html';
@@ -190,12 +427,19 @@
             const sidebar = document.getElementById('sidebar');
             const mobileBtn = document.querySelector('.mobile-menu-btn');
             
-            if (window.innerWidth <= 768 && 
+            if (window.innerWidth <= 1024 && 
                 !sidebar.contains(event.target) && 
                 event.target !== mobileBtn) {
                 sidebar.classList.remove('active');
             }
         });
+        
+        // Refresh data every 30 seconds
+        setInterval(async () => {
+            if (currentUser) {
+                await loadDashboardData();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
