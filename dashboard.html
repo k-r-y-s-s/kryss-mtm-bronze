@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - My Tenant Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🏠 MTM</h2>
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        </div>
+        
+        <div class="sidebar-menu">
+            <a href="dashboard.html" class="active">📊 Dashboard</a>
+            <a href="tenants.html">👥 Tenants</a>
+            <a href="utilities.html">⚡ Utilities</a>
+            <a href="rent.html">💰 Rent</a>
+            <a href="payments.html">💳 Payments</a>
+            <a href="ledger.html">📒 Ledger</a>
+        </div>
+        
+        <div class="sidebar-footer">
+            <button onclick="signOut()" class="btn-logout">🚪 Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="top-header">
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                <span id="userEmail">Loading...</span>
+            </div>
+        </header>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Monthly Rent Total</h3>
+                <p class="stat-amount" id="monthlyRent">₱0.00</p>
+                <span class="stat-trend">From all tenants</span>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Monthly Utilities</h3>
+                <p class="stat-amount" id="monthlyUtilities">₱0.00</p>
+                <span class="stat-trend">This month</span>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Payments Received</h3>
+                <p class="stat-amount" id="paymentsReceived">₱0.00</p>
+                <span class="stat-trend">Last 30 days</span>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Active Tenants</h3>
+                <p class="stat-amount" id="activeTenants">0</p>
+                <span class="stat-trend">Total</span>
+            </div>
+        </div>
+        
+        <!-- Needs Attention Section -->
+        <section class="dashboard-section">
+            <h2>⚠️ Needs Attention</h2>
+            <div class="attention-list" id="attentionList">
+                <p>No issues found. All tenants are up to date.</p>
+            </div>
+        </section>
+        
+        <!-- Recent Activity -->
+        <section class="dashboard-section">
+            <h2>📋 Recent Activity</h2>
+            <div class="activity-list" id="activityList">
+                <p>Loading recent activity...</p>
+            </div>
+        </section>
+    </div>
+    
+    <script src="js/supabase.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-open');
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                event.target !== menuToggle) {
+                sidebar.classList.remove('sidebar-open');
+            }
+        });
+        
+        // Update user email
+        checkAuth().then(session => {
+            if (session && session.user) {
+                document.getElementById('userEmail').textContent = session.user.email;
+            }
+        });
+    </script>
+</body>
+</html>
