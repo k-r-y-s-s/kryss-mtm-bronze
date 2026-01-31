@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Utilities - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -9,35 +11,71 @@
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
     
-    <!-- Sidebar -->
+    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>🏠 MTM</h2>
+            <h2>🏠 My Tenant Manager</h2>
+            <p class="sidebar-subtitle">Utilities Management</p>
         </div>
         
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
-            <a href="tenants.html" class="nav-item">👥 Tenants</a>
-            <a href="utilities.html" class="nav-item active">⚡ Utilities</a>
-            <a href="rent.html" class="nav-item">💰 Rent</a>
-            <a href="payments.html" class="nav-item">💳 Payments</a>
-            <a href="ledger.html" class="nav-item">📒 Ledger</a>
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="tenants.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Tenants</span>
+            </a>
+            <a href="utilities.html" class="nav-link active">
+                <span class="nav-icon">⚡</span>
+                <span>Utilities</span>
+            </a>
+            <a href="rent.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Rent</span>
+            </a>
+            <a href="payments.html" class="nav-link">
+                <span class="nav-icon">💳</span>
+                <span>Payments</span>
+            </a>
+            <a href="ledger.html" class="nav-link">
+                <span class="nav-icon">📒</span>
+                <span>Ledger</span>
+            </a>
         </nav>
         
         <div class="sidebar-footer">
-            <button onclick="logout()" class="btn btn-primary" style="width: 100%;">
+            <button onclick="logout()" class="btn btn-outline" style="width: 100%;">
                 🚪 Logout
             </button>
         </div>
     </div>
     
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="page-header">
-            <h1>⚡ Utilities</h1>
+            <div>
+                <h1>⚡ Utilities</h1>
+                <p class="small-text">Manual recording of Electric, Water, and Wi-Fi bills</p>
+            </div>
             <button onclick="showAddUtilityModal()" class="btn btn-primary">
                 ＋ Add Utility Bill
             </button>
+        </div>
+        
+        <!-- Filter Options -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <select id="filterTenant" onchange="filterUtilities()" class="form-group" style="flex: 1; min-width: 200px;">
+                <option value="">All Tenants</option>
+            </select>
+            <select id="filterType" onchange="filterUtilities()" class="form-group" style="flex: 1; min-width: 200px;">
+                <option value="">All Types</option>
+                <option value="electric">Electric</option>
+                <option value="water">Water</option>
+                <option value="wifi">Wi-Fi</option>
+            </select>
+            <input type="month" id="filterMonth" onchange="filterUtilities()" class="form-group" style="flex: 1; min-width: 200px;">
         </div>
         
         <!-- Utilities Table -->
@@ -45,70 +83,99 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th>Date</th>
                         <th>Tenant</th>
                         <th>Type</th>
                         <th>Amount</th>
                         <th>Period</th>
-                        <th>Date</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="utilitiesTable">
+                <tbody id="utilitiesTableBody">
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;">
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
                             Loading utilities...
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        
+        <!-- Summary Card -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stat-card">
+                <h3>Total Electric</h3>
+                <div class="stat-number" id="totalElectric">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total Water</h3>
+                <div class="stat-number" id="totalWater">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total Wi-Fi</h3>
+                <div class="stat-number" id="totalWifi">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+        </div>
     </div>
     
     <!-- Add Utility Modal -->
-    <div class="modal" id="utilityModal">
-        <div class="modal-content">
+    <div class="modal-overlay hidden" id="utilityModal">
+        <div class="modal">
             <div class="modal-header">
-                <h2>Add Utility Bill</h2>
+                <h3>Add Utility Bill</h3>
                 <button class="close-modal" onclick="closeUtilityModal()">×</button>
             </div>
             
-            <form id="utilityForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="utilityTenant">Tenant *</label>
-                        <select id="utilityTenant" required>
-                            <option value="">Select Tenant</option>
-                        </select>
+            <div class="modal-body">
+                <form id="utilityForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="utilityTenant">Tenant *</label>
+                            <select id="utilityTenant" required onchange="updateUtilityOptions()">
+                                <option value="">Select Tenant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="utilityType">Utility Type *</label>
+                            <select id="utilityType" required>
+                                <option value="">Select Type</option>
+                                <option value="electric">Electric</option>
+                                <option value="water">Water</option>
+                                <option value="wifi">Wi-Fi</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="utilityType">Type *</label>
-                        <select id="utilityType" required>
-                            <option value="electric">Electric</option>
-                            <option value="water">Water</option>
-                            <option value="wifi">Wi-Fi</option>
-                        </select>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="utilityAmount">Amount (₱) *</label>
+                            <input type="number" id="utilityAmount" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="periodMonth">For Month *</label>
+                            <input type="month" id="periodMonth" required>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="form-row">
+                    
                     <div class="form-group">
-                        <label for="amount">Amount (₱) *</label>
-                        <input type="number" id="amount" required min="0" step="0.01">
+                        <label for="utilityNotes">Notes (Optional)</label>
+                        <textarea id="utilityNotes" rows="2" placeholder="Meter reading, due date, etc."></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="periodEnd">For Month *</label>
-                        <input type="month" id="periodEnd" required>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeUtilityModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Save Utility Bill
+                        </button>
                     </div>
-                </div>
-                
-                <div style="margin-top: 30px; text-align: right;">
-                    <button type="button" class="btn btn-secondary" onclick="closeUtilityModal()">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        Save Bill
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
     
@@ -119,17 +186,51 @@
         const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
         
         let currentUser = null;
+        let allUtilities = [];
+        let allTenants = [];
         
         // Check authentication
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (!session) {
                 window.location.href = 'login.html';
             } else {
                 currentUser = session.user;
-                loadUtilities();
-                loadTenantsForDropdown();
+                await loadTenants();
+                await loadUtilities();
+                updateSummary();
             }
         });
+        
+        // Load tenants for dropdown
+        async function loadTenants() {
+            try {
+                const { data: tenants, error } = await supabase
+                    .from('tenants')
+                    .select('id, name, has_electric, has_water, has_wifi')
+                    .eq('user_id', currentUser.id)
+                    .eq('status', 'active')
+                    .order('name');
+                
+                if (error) throw error;
+                
+                allTenants = tenants || [];
+                
+                // Update tenant dropdowns
+                const filterSelect = document.getElementById('filterTenant');
+                const utilitySelect = document.getElementById('utilityTenant');
+                
+                filterSelect.innerHTML = '<option value="">All Tenants</option>';
+                utilitySelect.innerHTML = '<option value="">Select Tenant</option>';
+                
+                tenants.forEach(tenant => {
+                    filterSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                    utilitySelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+            }
+        }
         
         // Load utilities
         async function loadUtilities() {
@@ -141,52 +242,54 @@
                         tenants(name)
                     `)
                     .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
+                    .order('period_end', { ascending: false });
                 
                 if (error) throw error;
                 
-                updateUtilitiesTable(utilities || []);
+                allUtilities = utilities || [];
+                filterUtilities();
                 
             } catch (error) {
                 console.error('Error loading utilities:', error);
             }
         }
         
-        // Load tenants for dropdown
-        async function loadTenantsForDropdown() {
-            try {
-                const { data: tenants, error } = await supabase
-                    .from('tenants')
-                    .select('id, name')
-                    .eq('user_id', currentUser.id)
-                    .eq('status', 'active');
-                
-                if (error) throw error;
-                
-                const select = document.getElementById('utilityTenant');
-                select.innerHTML = '<option value="">Select Tenant</option>';
-                
-                tenants.forEach(tenant => {
-                    const option = document.createElement('option');
-                    option.value = tenant.id;
-                    option.textContent = tenant.name;
-                    select.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Error loading tenants:', error);
+        // Filter utilities based on selections
+        function filterUtilities() {
+            const tenantId = document.getElementById('filterTenant').value;
+            const type = document.getElementById('filterType').value;
+            const month = document.getElementById('filterMonth').value;
+            
+            let filtered = allUtilities;
+            
+            if (tenantId) {
+                filtered = filtered.filter(u => u.tenant_id === tenantId);
             }
+            
+            if (type) {
+                filtered = filtered.filter(u => u.type === type);
+            }
+            
+            if (month) {
+                filtered = filtered.filter(u => {
+                    const utilityMonth = u.period_end.slice(0, 7); // YYYY-MM
+                    return utilityMonth === month;
+                });
+            }
+            
+            updateUtilitiesTable(filtered);
+            updateSummary(filtered);
         }
         
         // Update utilities table
         function updateUtilitiesTable(utilities) {
-            const tbody = document.getElementById('utilitiesTable');
+            const tbody = document.getElementById('utilitiesTableBody');
             
             if (utilities.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;">
-                            No utility bills yet.
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            No utility bills found.
                         </td>
                     </tr>
                 `;
@@ -196,15 +299,36 @@
             let html = '';
             utilities.forEach(utility => {
                 const date = new Date(utility.created_at);
+                const periodStart = new Date(utility.period_start);
                 const periodEnd = new Date(utility.period_end);
+                
+                // Get icon based on type
+                let icon = '📝';
+                if (utility.type === 'electric') icon = '⚡';
+                if (utility.type === 'water') icon = '💧';
+                if (utility.type === 'wifi') icon = '📶';
                 
                 html += `
                     <tr>
+                        <td>${date.toLocaleDateString('en-PH')}</td>
                         <td>${utility.tenants?.name || 'Unknown'}</td>
-                        <td>${utility.type.charAt(0).toUpperCase() + utility.type.slice(1)}</td>
-                        <td>₱${parseFloat(utility.amount).toFixed(2)}</td>
-                        <td>${periodEnd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                        <td>${date.toLocaleDateString()}</td>
+                        <td>
+                            <span class="status-pill ${utility.type === 'electric' ? 'status-active' : utility.type === 'water' ? 'status-moved-out' : 'status-left'}">
+                                ${icon} ${utility.type.charAt(0).toUpperCase() + utility.type.slice(1)}
+                            </span>
+                        </td>
+                        <td class="currency">₱${parseFloat(utility.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                            ${periodStart.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} 
+                            - 
+                            ${periodEnd.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td>${utility.notes || ''}</td>
+                        <td>
+                            <button class="action-btn delete" onclick="deleteUtility('${utility.id}')">
+                                Delete
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -212,22 +336,104 @@
             tbody.innerHTML = html;
         }
         
-        // Show add utility modal
-        function showAddUtilityModal() {
-            document.getElementById('utilityForm').reset();
+        // Update summary cards
+        function updateSummary(utilities = allUtilities) {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
             
+            const monthlyUtilities = utilities.filter(u => {
+                const utilityMonth = u.period_end.slice(0, 7);
+                return utilityMonth === currentMonth;
+            });
+            
+            let totalElectric = 0;
+            let totalWater = 0;
+            let totalWifi = 0;
+            
+            monthlyUtilities.forEach(utility => {
+                const amount = parseFloat(utility.amount);
+                if (utility.type === 'electric') totalElectric += amount;
+                if (utility.type === 'water') totalWater += amount;
+                if (utility.type === 'wifi') totalWifi += amount;
+            });
+            
+            document.getElementById('totalElectric').textContent = 
+                '₱' + totalElectric.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalWater').textContent = 
+                '₱' + totalWater.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalWifi').textContent = 
+                '₱' + totalWifi.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+        }
+        
+        // ============================================
+        // UTILITY LOGIC DEPENDENCY (As specified)
+        // ============================================
+        
+        // Update available utility options based on selected tenant
+        function updateUtilityOptions() {
+            const tenantId = document.getElementById('utilityTenant').value;
+            const typeSelect = document.getElementById('utilityType');
+            
+            if (!tenantId) {
+                // Reset to all options
+                typeSelect.innerHTML = `
+                    <option value="">Select Type</option>
+                    <option value="electric">Electric</option>
+                    <option value="water">Water</option>
+                    <option value="wifi">Wi-Fi</option>
+                `;
+                return;
+            }
+            
+            // Find tenant
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (!tenant) return;
+            
+            // Filter options based on tenant's assigned utilities
+            typeSelect.innerHTML = '<option value="">Select Type</option>';
+            
+            if (tenant.has_electric) {
+                typeSelect.innerHTML += '<option value="electric">Electric</option>';
+            }
+            
+            if (tenant.has_water) {
+                typeSelect.innerHTML += '<option value="water">Water</option>';
+            }
+            
+            if (tenant.has_wifi) {
+                typeSelect.innerHTML += '<option value="wifi">Wi-Fi</option>';
+            }
+            
+            // If no utilities assigned
+            if (!tenant.has_electric && !tenant.has_water && !tenant.has_wifi) {
+                typeSelect.innerHTML = '<option value="">Tenant has no utilities assigned</option>';
+                typeSelect.disabled = true;
+            } else {
+                typeSelect.disabled = false;
+            }
+        }
+        
+        // ============================================
+        // ADD UTILITY BILL
+        // ============================================
+        function showAddUtilityModal() {
             // Set default month to current month
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
-            document.getElementById('periodEnd').value = `${year}-${month}`;
+            document.getElementById('periodMonth').value = `${year}-${month}`;
             
-            document.getElementById('utilityModal').style.display = 'flex';
-        }
-        
-        // Close utility modal
-        function closeUtilityModal() {
-            document.getElementById('utilityModal').style.display = 'none';
+            // Reset form
+            document.getElementById('utilityForm').reset();
+            document.getElementById('utilityType').innerHTML = `
+                <option value="">Select Type</option>
+                <option value="electric">Electric</option>
+                <option value="water">Water</option>
+                <option value="wifi">Wi-Fi</option>
+            `;
+            document.getElementById('utilityType').disabled = false;
+            
+            document.getElementById('utilityModal').classList.remove('hidden');
         }
         
         // Save utility bill
@@ -236,12 +442,41 @@
             
             const tenantId = document.getElementById('utilityTenant').value;
             const type = document.getElementById('utilityType').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const periodEnd = document.getElementById('periodEnd').value;
+            const amount = parseFloat(document.getElementById('utilityAmount').value);
+            const periodMonth = document.getElementById('periodMonth').value;
+            const notes = document.getElementById('utilityNotes').value;
             
-            // Create period start (first day of month)
-            const periodStart = periodEnd + '-01';
-            const periodEndDate = new Date(new Date(periodStart).getFullYear(), new Date(periodStart).getMonth() + 1, 0);
+            // Validation
+            if (!tenantId || !type || !amount || !periodMonth) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Check if tenant is assigned this utility
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (!tenant) {
+                alert('Selected tenant not found.');
+                return;
+            }
+            
+            if (type === 'electric' && !tenant.has_electric) {
+                alert('This tenant is not assigned Electric utility.');
+                return;
+            }
+            
+            if (type === 'water' && !tenant.has_water) {
+                alert('This tenant is not assigned Water utility.');
+                return;
+            }
+            
+            if (type === 'wifi' && !tenant.has_wifi) {
+                alert('This tenant is not assigned Wi-Fi utility.');
+                return;
+            }
+            
+            // Create period dates
+            const periodStart = periodMonth + '-01';
+            const periodEnd = new Date(new Date(periodStart).getFullYear(), new Date(periodStart).getMonth() + 1, 0);
             
             try {
                 const { error } = await supabase
@@ -252,31 +487,78 @@
                         type: type,
                         amount: amount,
                         period_start: periodStart,
-                        period_end: periodEndDate.toISOString().split('T')[0]
+                        period_end: periodEnd.toISOString().split('T')[0],
+                        notes: notes
                     }]);
                 
                 if (error) throw error;
                 
-                alert('Utility bill added successfully!');
+                alert('✓ Utility bill added successfully!');
                 closeUtilityModal();
-                loadUtilities();
+                await loadUtilities();
                 
             } catch (error) {
                 console.error('Error saving utility:', error);
-                alert('Error: ' + error.message);
+                alert('✗ Failed to save utility bill: ' + error.message);
             }
         });
         
-        // Toggle sidebar for mobile
+        // Delete utility
+        async function deleteUtility(utilityId) {
+            if (!confirm('Are you sure you want to delete this utility bill?')) {
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('utilities')
+                    .delete()
+                    .eq('id', utilityId)
+                    .eq('user_id', currentUser.id);
+                
+                if (error) throw error;
+                
+                alert('✓ Utility bill deleted successfully!');
+                await loadUtilities();
+                
+            } catch (error) {
+                console.error('Error deleting utility:', error);
+                alert('✗ Failed to delete utility bill');
+            }
+        }
+        
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        function closeUtilityModal() {
+            document.getElementById('utilityModal').classList.add('hidden');
+        }
+        
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
         }
         
-        // Logout function
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = 'login.html';
         }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(event.target) && 
+                event.target !== mobileBtn) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Set default month filter to current month
+        const now = new Date();
+        const currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('filterMonth').value = currentYearMonth;
     </script>
 </body>
 </html>
