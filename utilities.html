@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Utilities - My Tenant Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🏠 MTM</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+            <a href="tenants.html" class="nav-item">👥 Tenants</a>
+            <a href="utilities.html" class="nav-item active">⚡ Utilities</a>
+            <a href="rent.html" class="nav-item">💰 Rent</a>
+            <a href="payments.html" class="nav-item">💳 Payments</a>
+            <a href="ledger.html" class="nav-item">📒 Ledger</a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-primary" style="width: 100%;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>⚡ Utilities</h1>
+            <button onclick="showAddUtilityModal()" class="btn btn-primary">
+                ＋ Add Utility Bill
+            </button>
+        </div>
+        
+        <!-- Utilities Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tenant</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Period</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="utilitiesTable">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            Loading utilities...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Add Utility Modal -->
+    <div class="modal" id="utilityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Utility Bill</h2>
+                <button class="close-modal" onclick="closeUtilityModal()">×</button>
+            </div>
+            
+            <form id="utilityForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="utilityTenant">Tenant *</label>
+                        <select id="utilityTenant" required>
+                            <option value="">Select Tenant</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="utilityType">Type *</label>
+                        <select id="utilityType" required>
+                            <option value="electric">Electric</option>
+                            <option value="water">Water</option>
+                            <option value="wifi">Wi-Fi</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount">Amount (₱) *</label>
+                        <input type="number" id="amount" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="periodEnd">For Month *</label>
+                        <input type="month" id="periodEnd" required>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeUtilityModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Save Bill
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        
+        // Check authentication
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                loadUtilities();
+                loadTenantsForDropdown();
+            }
+        });
+        
+        // Load utilities
+        async function loadUtilities() {
+            try {
+                const { data: utilities, error } = await supabase
+                    .from('utilities')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                updateUtilitiesTable(utilities || []);
+                
+            } catch (error) {
+                console.error('Error loading utilities:', error);
+            }
+        }
+        
+        // Load tenants for dropdown
+        async function loadTenantsForDropdown() {
+            try {
+                const { data: tenants, error } = await supabase
+                    .from('tenants')
+                    .select('id, name')
+                    .eq('user_id', currentUser.id)
+                    .eq('status', 'active');
+                
+                if (error) throw error;
+                
+                const select = document.getElementById('utilityTenant');
+                select.innerHTML = '<option value="">Select Tenant</option>';
+                
+                tenants.forEach(tenant => {
+                    const option = document.createElement('option');
+                    option.value = tenant.id;
+                    option.textContent = tenant.name;
+                    select.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+            }
+        }
+        
+        // Update utilities table
+        function updateUtilitiesTable(utilities) {
+            const tbody = document.getElementById('utilitiesTable');
+            
+            if (utilities.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            No utility bills yet.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            utilities.forEach(utility => {
+                const date = new Date(utility.created_at);
+                const periodEnd = new Date(utility.period_end);
+                
+                html += `
+                    <tr>
+                        <td>${utility.tenants?.name || 'Unknown'}</td>
+                        <td>${utility.type.charAt(0).toUpperCase() + utility.type.slice(1)}</td>
+                        <td>₱${parseFloat(utility.amount).toFixed(2)}</td>
+                        <td>${periodEnd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                        <td>${date.toLocaleDateString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Show add utility modal
+        function showAddUtilityModal() {
+            document.getElementById('utilityForm').reset();
+            
+            // Set default month to current month
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('periodEnd').value = `${year}-${month}`;
+            
+            document.getElementById('utilityModal').style.display = 'flex';
+        }
+        
+        // Close utility modal
+        function closeUtilityModal() {
+            document.getElementById('utilityModal').style.display = 'none';
+        }
+        
+        // Save utility bill
+        document.getElementById('utilityForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const tenantId = document.getElementById('utilityTenant').value;
+            const type = document.getElementById('utilityType').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const periodEnd = document.getElementById('periodEnd').value;
+            
+            // Create period start (first day of month)
+            const periodStart = periodEnd + '-01';
+            const periodEndDate = new Date(new Date(periodStart).getFullYear(), new Date(periodStart).getMonth() + 1, 0);
+            
+            try {
+                const { error } = await supabase
+                    .from('utilities')
+                    .insert([{
+                        user_id: currentUser.id,
+                        tenant_id: tenantId,
+                        type: type,
+                        amount: amount,
+                        period_start: periodStart,
+                        period_end: periodEndDate.toISOString().split('T')[0]
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('Utility bill added successfully!');
+                closeUtilityModal();
+                loadUtilities();
+                
+            } catch (error) {
+                console.error('Error saving utility:', error);
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        
+        // Logout function
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
