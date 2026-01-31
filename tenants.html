@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenants - My Tenant Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Sidebar (same as dashboard) -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🏠 MTM</h2>
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        </div>
+        
+        <div class="sidebar-menu">
+            <a href="dashboard.html">📊 Dashboard</a>
+            <a href="tenants.html" class="active">👥 Tenants</a>
+            <a href="utilities.html">⚡ Utilities</a>
+            <a href="rent.html">💰 Rent</a>
+            <a href="payments.html">💳 Payments</a>
+            <a href="ledger.html">📒 Ledger</a>
+        </div>
+        
+        <div class="sidebar-footer">
+            <button onclick="signOut()" class="btn-logout">🚪 Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="top-header">
+            <h1>👥 Tenants</h1>
+            <button class="btn btn-primary" onclick="showAddTenantModal()">
+                ＋ Add New Tenant
+            </button>
+        </header>
+        
+        <!-- Tenants Table -->
+        <div class="table-container">
+            <table class="data-table" id="tenantsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Monthly Rent</th>
+                        <th>Due Day</th>
+                        <th>Utilities</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tenantsTableBody">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Mobile view for tenants -->
+        <div class="mobile-list" id="mobileTenantsList">
+            <!-- Mobile cards will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Add Tenant Modal -->
+    <div id="addTenantModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Tenant</h3>
+                <button class="close-modal" onclick="closeModal('addTenantModal')">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="tenantForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tenantName">Full Name *</label>
+                            <input type="text" id="tenantName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tenantRent">Monthly Rent (₱) *</label>
+                            <input type="number" id="tenantRent" required min="0" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dueDay">Rent Due Day (1-31) *</label>
+                            <input type="number" id="dueDay" required min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="tenantStatus">Status</label>
+                            <select id="tenantStatus">
+                                <option value="active">Active</option>
+                                <option value="moved_out">Moved Out</option>
+                                <option value="left_without_notice">Left Without Notice</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Utilities Assigned</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="hasElectric"> Electric</label>
+                            <label><input type="checkbox" id="hasWater"> Water</label>
+                            <label><input type="checkbox" id="hasWifi"> Wi-Fi</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tenantNotes">Notes</label>
+                        <textarea id="tenantNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addTenantModal')">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Save Tenant
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Consent Modal -->
+    <div id="consentModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Data Consent Required</h3>
+                <button class="close-modal" onclick="closeModal('consentModal')">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="consent-warning">
+                    <p><strong>Important:</strong> By adding this tenant, you confirm that:</p>
+                    <ul>
+                        <li>You have the legal right to collect and store this personal information</li>
+                        <li>You will comply with data protection regulations</li>
+                        <li>This information will be used only for rental management purposes</li>
+                    </ul>
+                    <p class="highlight">Data Privacy Act of 2012 (Philippines) applies</p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('consentModal')">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="confirmConsent()">
+                        I Understand & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/supabase.js"></script>
+    <script src="js/tenants.js"></script>
+    <script>
+        // Modal functions
+        function showAddTenantModal() {
+            document.getElementById('addTenantModal').classList.remove('hidden');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-open');
+        }
+    </script>
+</body>
+</html>
