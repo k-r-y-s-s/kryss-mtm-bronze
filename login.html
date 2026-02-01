@@ -6,8 +6,119 @@
     <title>Login - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* Your original loading screen styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+        }
+        
+        .loading-screen.hidden {
+            display: none;
+        }
+        
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .small-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        /* Your original auth styles */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .auth-box {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-header h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .auth-header p {
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+        
+        .auth-links {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .auth-links a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
+    <!-- Your original loading screen -->
     <div class="loading-screen" id="loadingScreen">
         <div>
             <div class="loading-spinner"></div>
@@ -17,6 +128,7 @@
         </div>
     </div>
 
+    <!-- Your original auth container -->
     <div class="auth-container">
         <div class="auth-box">
             <div class="auth-header">
@@ -35,6 +147,76 @@
                     <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
                 </div>
                 
+                <button type="submit" class="btn btn-primary btn-block">
+                    Sign In to Dashboard
+                </button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a href="signup.html">Start 7-day free trial</a></p>
+                <p><a href="index.html">← Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // === FIXED SUPABASE CODE ===
+        // Your Supabase credentials
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        
+        // === FIX: Changed variable name to avoid conflict ===
+        // OLD (causing error): const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        // NEW (fixed):
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Hide loading screen initially
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        // Check if already logged in
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                // If already logged in, show loading and redirect
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 7000);
+            }
+        });
+        
+        // Handle login - Your original code but using supabaseClient
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                // Show loading screen for 5-10 seconds as specified
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                
+                // === FIX: Using supabaseClient instead of supabase ===
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                // Wait 7 seconds (midpoint of 5-10) then redirect
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 7000);
+                
+            } catch (error) {
+                // Hide loading on error
+                document.getElementById('loadingScreen').classList.add('hidden');
+                alert('Login failed: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>                
                 <button type="submit" class="btn btn-primary btn-block">
                     Sign In to Dashboard
                 </button>
