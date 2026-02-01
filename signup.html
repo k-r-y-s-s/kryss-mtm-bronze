@@ -6,6 +6,83 @@
     <title>Sign Up - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* Same styles as login.html */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .auth-box {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-header h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .auth-header p {
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+        
+        .auth-links {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .auth-links a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .terms {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 15px;
+        }
+    </style>
 </head>
 <body>
     <div class="auth-container">
@@ -22,19 +99,63 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password (min. 6 characters)</label>
-                    <input type="password" id="password" required placeholder="••••••••" autocomplete="new-password" minlength="6">
-                </div>
-                
-                <div class="form-group">
-                    <label for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" required placeholder="••••••••" autocomplete="new-password" minlength="6">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" autocomplete="new-password">
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block">
                     Start 7-Day Free Trial
                 </button>
                 
+                <p class="terms">By signing up, you agree to our Terms of Service</p>
+            </form>
+            
+            <div class="auth-links">
+                <p>Already have an account? <a href="login.html">Login here</a></p>
+                <p><a href="index.html">← Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Supabase credentials
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        
+        // === FIX: Using supabaseClient instead of supabase ===
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Handle signup
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    alert('Signup failed: ' + error.message);
+                    return;
+                }
+                
+                // Success - show message
+                alert('✅ Account created successfully! You can now login.');
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+                
+            } catch (error) {
+                alert('Signup error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>                
                 <p class="terms">By signing up, you agree to our Terms of Service</p>
             </form>
             
