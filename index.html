@@ -5,36 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Tenant Manager - Bronze Tier</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <style>
-        /* Add index-specific styles here */
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+</head>
+<body>
+    <div class="hero">
+        <h1>My Tenant Manager</h1>
+        <p>Bronze Tier - For Cebu Landlords</p>
         
-        .hero h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
+        <div class="cta-buttons">
+            <a href="login.html" class="btn btn-primary">Login</a>
+            <a href="signup.html" class="btn btn-secondary">Start 7-Day Free Trial</a>
+        </div>
+    </div>
+    
+    <div class="features">
+        <h2>Professional Rental Management Made Simple</h2>
+        <p>Designed specifically for Cebu landlords who want a reliable, straightforward way to manage tenants, rent, utilities, payments, and ledgers.</p>
         
-        .hero p {
-            font-size: 1.2em;
-            opacity: 0.9;
-            margin-bottom: 30px;
-        }
-        
-        .cta-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-        
-        .btn {
-            padding: 15px 30px;
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Single Landlord Account</h3>
+                <p>Perfect for individual landlords. No complex multi-user setups.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Manual/Semi-Automated</h3>
+                <p>Clear workflows that you control. No unexpected automation.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple landing page - no Supabase needed
+        console.log("Landing page loaded");
+    </script>
+</body>
+</html>            padding: 15px 30px;
             border-radius: 5px;
             text-decoration: none;
             font-weight: bold;
