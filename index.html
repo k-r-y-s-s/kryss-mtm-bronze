@@ -3,256 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Tenant Manager - Professional Rental Management</title>
+    <title>My Tenant Manager - Bronze Tier</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* Add index-specific styles here */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .hero p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .features {
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .feature-card {
+            padding: 30px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1>🏠 My Tenant Manager</h1>
-                <span class="nav-subtitle">Bronze Tier - For Cebu Landlords</span>
-            </div>
-            <div class="nav-actions">
-                <a href="login.html" class="btn btn-outline">Login</a>
-                <a href="signup.html" class="btn btn-primary">Start 7-Day Free Trial</a>
-            </div>
-        </div>
-    </nav>
-
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h2>Professional Rental Management Made Simple</h2>
-                <p class="lead">Designed specifically for Cebu landlords who want a reliable, straightforward way to manage tenants, rent, utilities, payments, and ledgers.</p>
-                
-                <div class="hero-features">
-                    <div class="feature">
-                        <span class="feature-icon">👤</span>
-                        <h3>Single Landlord Account</h3>
-                        <p>Perfect for individual landlords. No complex multi-user setups.</p>
-                    </div>
-                    <div class="feature">
-                        <span class="feature-icon">💰</span>
-                        <h3>Manual/Semi-Automated</h3>
-                        <p>Clear workflows that you control. No unexpected automation.</p>
-                    </div>
-                    <div class="feature">
-                        <span class="feature-icon">📱</span>
-                        <h3>Works on Any Device</h3>
-                        <p>Perfectly responsive on desktop, tablet, and mobile.</p>
-                    </div>
-                </div>
-
-                <div class="cta-section">
-                    <a href="signup.html" class="btn btn-primary btn-large">Start Free Trial - ₱0 for 7 Days</a>
-                    <p class="small-text">No credit card required. Cancel anytime.</p>
-                </div>
-            </div>
+    <div class="hero">
+        <h1>My Tenant Manager</h1>
+        <p>Bronze Tier - For Cebu Landlords</p>
+        
+        <div class="cta-buttons">
+            <a href="login.html" class="btn btn-primary">Login</a>
+            <a href="signup.html" class="btn btn-secondary">Start 7-Day Free Trial</a>
         </div>
-    </section>
-
-    <!-- Features Grid -->
-    <section class="features-section">
-        <div class="container">
-            <h2 class="section-title">Bronze Tier Core Features</h2>
-            <p class="section-subtitle">Everything you need, nothing you don't.</p>
-            
-            <div class="features-grid">
-                <!-- Feature 1: Authentication -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">01</span>
-                        <h3>Secure Authentication</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ Email + password signup</li>
-                        <li>✓ Persistent sessions</li>
-                        <li>✓ Consistent logout on every page</li>
-                        <li>✓ 5-10 second loading screen after login</li>
-                    </ul>
-                </div>
-
-                <!-- Feature 2: Tenants (Core) -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">02</span>
-                        <h3>Tenant Management</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ Add/Edit/Delete tenants</li>
-                        <li>✓ Data consent modal (DPA 2012 compliant)</li>
-                        <li>✓ Status pills: Active/Moved Out/Left</li>
-                        <li>✓ Rent due day tracking</li>
-                        <li>✓ Mobile-friendly tables</li>
-                    </ul>
-                </div>
-
-                <!-- Feature 3: Utilities -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">03</span>
-                        <h3>Utilities Tracking</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ Electric, Water, Wi-Fi</li>
-                        <li>✓ Proper currency formatting (₱)</li>
-                        <li>✓ Manual recording</li>
-                        <li>✓ Tenant-specific utility assignment</li>
-                    </ul>
-                </div>
-
-                <!-- Feature 4: Rent -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">04</span>
-                        <h3>Rent Management</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ Monthly rent generation</li>
-                        <li>✓ Duplicate rent prevention</li>
-                        <li>✓ Manual trigger (Bronze Tier)</li>
-                        <li>✓ Creates ledger entries automatically</li>
-                    </ul>
-                </div>
-
-                <!-- Feature 5: Payments -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">05</span>
-                        <h3>Payments Recording</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ Manual payment recording</li>
-                        <li>✓ Cash, GCash, Bank Transfer, Check</li>
-                        <li>✓ SMS notification ready</li>
-                        <li>✓ Future-ready for GCash integration</li>
-                    </ul>
-                </div>
-
-                <!-- Feature 6: Ledger -->
-                <div class="feature-card">
-                    <div class="feature-header">
-                        <span class="feature-number">06</span>
-                        <h3>Complete Ledger System</h3>
-                    </div>
-                    <ul class="feature-list">
-                        <li>✓ General ledger (all transactions)</li>
-                        <li>✓ Tenant-specific ledger</li>
-                        <li>✓ Running balance calculation</li>
-                        <li>✓ Mobile-friendly display</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing -->
-    <section class="pricing-section">
-        <div class="container">
-            <h2 class="section-title">Simple, Transparent Pricing</h2>
-            <p class="section-subtitle">Start with Bronze, scale when you're ready.</p>
-            
-            <div class="pricing-card">
-                <div class="pricing-header">
-                    <h3>Bronze Tier</h3>
-                    <div class="price">₱499<span class="period">/month</span></div>
-                    <p class="price-subtitle">Perfect for individual landlords</p>
-                </div>
-                
-                <div class="pricing-features">
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>Single landlord account</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>Unlimited tenants</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>Rent + Utilities tracking</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>Complete ledger system</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>Mobile responsive</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="checkmark">✓</span>
-                        <span>7-day free trial</span>
-                    </div>
-                </div>
-                
-                <div class="pricing-cta">
-                    <a href="signup.html" class="btn btn-primary btn-block">Start Free Trial</a>
-                    <p class="small-text">All features included. No hidden fees.</p>
-                </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="features">
+        <h2 style="text-align: center; margin-bottom: 20px;">Professional Rental Management Made Simple</h2>
+        <p style="text-align: center; color: #666; max-width: 800px; margin: 0 auto 40px;">
+            Designed specifically for Cebu landlords who want a reliable, straightforward way to manage tenants, rent, utilities, payments, and ledgers.
+        </p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Single Landlord Account</h3>
+                <p>Perfect for individual landlords. No complex multi-user setups.</p>
             </div>
             
-            <div class="pricing-note">
-                <p><strong>Regional Variants:</strong> Cebu-only version available at lower cost. General Philippines version for wider use.</p>
+            <div class="feature-card">
+                <h3>Manual/Semi-Automated</h3>
+                <p>Clear workflows that you control. No unexpected automation.</p>
             </div>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <h3>🏠 My Tenant Manager</h3>
-                    <p>Professional rental management for Cebu landlords.</p>
-                </div>
-                
-                <div class="footer-links">
-                    <div class="link-group">
-                        <h4>Product</h4>
-                        <a href="#">Features</a>
-                        <a href="#">Pricing</a>
-                        <a href="#">Free Trial</a>
-                    </div>
-                    <div class="link-group">
-                        <h4>Support</h4>
-                        <a href="#">Help Center</a>
-                        <a href="#">Contact Us</a>
-                        <a href="#">Privacy Policy</a>
-                    </div>
-                    <div class="link-group">
-                        <h4>Company</h4>
-                        <a href="#">About</a>
-                        <a href="#">Blog</a>
-                        <a href="#">Careers</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>© 2024 My Tenant Manager. Designed specifically for Cebu landlords. Bronze Tier v1.0</p>
-                <p class="footer-note">"Trustworthy look for landlords" - Clean, calm, professional design philosophy</p>
-            </div>
-        </div>
-    </footer>
-
+    </div>
+    
     <script>
-        // Supabase initialization for auth checks
+        // If index.html needs Supabase (for checking login status)
+        // Use the SAME fix as login.html
+        
         const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
-        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
-
-        // Check if user is already logged in
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        
+        // Initialize Supabase client with DIFFERENT variable name
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Optional: Check if user is already logged in and redirect
+        // Uncomment if you want this functionality
+        /*
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                // Redirect to dashboard if already logged in
+                // If already logged in, redirect to dashboard
                 window.location.href = 'dashboard.html';
             }
+        }).catch(error => {
+            console.error("Session check error:", error);
         });
+        */
+        
+        // Alternative: If index.html doesn't need Supabase at all, 
+        // remove ALL the code above and keep only:
+        // <script>
+        // // No Supabase needed for landing page
+        // </script>
+        
+        console.log("Index page loaded successfully");
     </script>
 </body>
 </html>
