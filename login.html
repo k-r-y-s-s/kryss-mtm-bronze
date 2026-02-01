@@ -28,13 +28,12 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" required placeholder="landlord@example.com">
+                    <input type="email" id="email" required placeholder="landlord@example.com" autocomplete="email">
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="****" 
-       autocomplete="current-password">
+                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block">
@@ -50,10 +49,10 @@
     </div>
     
     <script>
-        // Initialize Supabase
+        // Initialize Supabase - FIXED: Changed supabaseClient to supabase
         const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
-        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
         
         // Hide loading screen initially
         document.getElementById('loadingScreen').classList.add('hidden');
@@ -67,6 +66,8 @@
                     window.location.href = 'dashboard.html';
                 }, 7000); // 7 seconds as specified
             }
+        }).catch(error => {
+            console.error("Session check error:", error);
         });
         
         // Handle login
@@ -77,15 +78,22 @@
             const password = document.getElementById('password').value;
             
             try {
+                // Show loading immediately
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
                 
-                if (error) throw error;
+                if (error) {
+                    // Hide loading if error
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                    throw error;
+                }
                 
-                // Show loading screen for 5-10 seconds as specified
-                document.getElementById('loadingScreen').classList.remove('hidden');
+                // Success - show loading screen for 5-10 seconds as specified
+                console.log("Login successful, waiting 7 seconds before redirect...");
                 
                 // Wait 7 seconds (midpoint of 5-10) then redirect
                 setTimeout(() => {
@@ -94,7 +102,14 @@
                 
             } catch (error) {
                 alert('Login failed: ' + error.message);
+                console.error("Login error:", error);
             }
+        });
+        
+        // Add error handling for uncaught errors
+        window.addEventListener('error', function(event) {
+            console.error("Global error caught:", event.error);
+            alert("An error occurred. Check console for details.");
         });
     </script>
 </body>
