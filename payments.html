@@ -6,6 +6,2525 @@
     <title>Payments - My Tenant Manager</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🏠 My Tenant Manager</h2>
+            <p class="sidebar-subtitle">Payments Recording</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="tenants.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Tenants</span>
+            </a>
+            <a href="utilities.html" class="nav-link">
+                <span class="nav-icon">⚡</span>
+                <span>Utilities</span>
+            </a>
+            <a href="rent.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Rent</span>
+            </a>
+            <a href="payments.html" class="nav-link active">
+                <span class="nav-icon">💳</span>
+                <span>Payments</span>
+            </a>
+            <a href="ledger.html" class="nav-link">
+                <span class="nav-icon">📒</span>
+                <span>Ledger</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-outline" style="width: 100%;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>💳 Payments</h1>
+                <p class="small-text">Manual payment recording - GCash/SMS ready</p>
+            </div>
+            <button onclick="showAddPaymentModal()" class="btn btn-primary">
+                ＋ Record Payment
+            </button>
+        </div>
+        
+        <!-- Filter Options -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <select id="filterTenant" onchange="filterPayments()" class="form-group" style="flex: 1; min-width: 200px;">
+                <option value="">All Tenants</option>
+            </select>
+            <select id="filterMethod" onchange="filterPayments()" class="form-group" style="flex: 1; min-width: 200px;">
+                <option value="">All Methods</option>
+                <option value="cash">Cash</option>
+                <option value="gcash">GCash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="check">Check</option>
+                <option value="other">Other</option>
+            </select>
+            <input type="month" id="filterMonth" onchange="filterPayments()" class="form-group" style="flex: 1; min-width: 200px;">
+        </div>
+        
+        <!-- Payments Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Tenant</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>For</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            Loading payments...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stat-card">
+                <h3>Total Cash</h3>
+                <div class="stat-number" id="totalCash">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total GCash</h3>
+                <div class="stat-number" id="totalGCash">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total Bank</h3>
+                <div class="stat-number" id="totalBank">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+        </div>
+        
+        <!-- GCash Integration Section -->
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #e0f2fe;">
+            <h3>📱 GCash Payment Integration</h3>
+            <p class="small-text" style="margin-bottom: 1rem;">
+                Generate QR codes or payment links for tenants. Ready for SMS/email integration.
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="showGcashPaymentModal()">
+                    Generate GCash Payment Link
+                </button>
+                <button class="btn btn-secondary" onclick="showSmsModal()">
+                    Preview SMS Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 1: RECORD PAYMENT (Fixed and Enhanced)
+         ============================================ -->
+    <div class="modal-overlay hidden" id="paymentModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>➕ Record Payment</h3>
+                <button class="close-modal" onclick="closePaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentTenant">Tenant *</label>
+                            <select id="paymentTenant" required onchange="updatePaymentMethodOptions()">
+                                <option value="">Select Tenant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentDate">Payment Date *</label>
+                            <input type="date" id="paymentDate" required value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentAmount">Amount (₱) *</label>
+                            <input type="number" id="paymentAmount" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Payment Method *</label>
+                            <select id="paymentMethod" required onchange="showPaymentMethodFields()">
+                                <option value="cash">Cash</option>
+                                <option value="gcash">GCash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="check">Check</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- GCash Specific Fields -->
+                    <div id="gcashFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">📱 GCash Payment Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="gcashReference">GCash Reference Number</label>
+                                <input type="text" id="gcashReference" placeholder="e.g., 1234567890">
+                                <p class="small-text" style="margin-top: 0.25rem;">Transaction reference from GCash app</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="gcashSender">Sender Name/Mobile</label>
+                                <input type="text" id="gcashSender" placeholder="e.g., +639123456789">
+                                <p class="small-text" style="margin-top: 0.25rem;">Tenant's name or mobile number</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Transfer Specific Fields -->
+                    <div id="bankFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏦 Bank Transfer Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="bankReference">Bank Reference Number</label>
+                                <input type="text" id="bankReference" placeholder="e.g., 1234567890">
+                                <p class="small-text" style="margin-top: 0.25rem;">Transaction reference from bank</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="bankName">Bank Name</label>
+                                <input type="text" id="bankName" placeholder="e.g., BDO, BPI, Metrobank, etc.">
+                                <p class="small-text" style="margin-top: 0.25rem;">Name of the bank used</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Check Specific Fields -->
+                    <div id="checkFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">📄 Check Payment Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkNumber">Check Number</label>
+                                <input type="text" id="checkNumber" placeholder="e.g., 123456">
+                                <p class="small-text" style="margin-top: 0.25rem;">Check number from the check</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="checkDate">Check Date</label>
+                                <input type="date" id="checkDate">
+                                <p class="small-text" style="margin-top: 0.25rem;">Date on the check</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Categories -->
+                    <div class="form-group">
+                        <label>Payment For *</label>
+                        <p class="small-text">Select what this payment covers:</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forRent" value="rent" checked>
+                                <div>
+                                    <div style="font-weight: 500;">🏠 Rent</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forElectric" value="electric">
+                                <div>
+                                    <div style="font-weight: 500;">⚡ Electric</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forWater" value="water">
+                                <div>
+                                    <div style="font-weight: 500;">💧 Water</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forWifi" value="wifi">
+                                <div>
+                                    <div style="font-weight: 500;">📶 Wi-Fi</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="paymentNotes">Notes (Optional)</label>
+                        <textarea id="paymentNotes" rows="3" placeholder="Payment details, reference numbers, special instructions, etc."></textarea>
+                    </div>
+                    
+                    <div style="padding: 1rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                        <p><strong>Note:</strong> This payment will:</p>
+                        <ul style="margin: 0.5rem 0 0.5rem 1.5rem;">
+                            <li>Update tenant's balance in ledger</li>
+                            <li>Mark corresponding rent/utilities as paid (if applicable)</li>
+                            <li>Be available for SMS/email notifications</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="savePaymentBtn">
+                            Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 2: GCASH PAYMENT GENERATION
+         ============================================ -->
+    <div class="modal-overlay hidden" id="gcashPaymentModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>📱 Generate GCash Payment</h3>
+                <button class="close-modal" onclick="closeGcashPaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="gcashPaymentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gcashTenant">Tenant *</label>
+                            <select id="gcashTenant" required onchange="updateGcashAmount()">
+                                <option value="">Select Tenant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gcashAmount">Amount (₱) *</label>
+                            <input type="number" id="gcashAmount" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gcashDescription">Payment Description</label>
+                        <input type="text" id="gcashDescription" placeholder="e.g., Rent for December 2024">
+                    </div>
+                    
+                    <!-- QR Code Display -->
+                    <div id="gcashQrContainer" style="display: none; margin: 1.5rem 0; text-align: center;">
+                        <h4>GCash QR Code</h4>
+                        <div id="gcashQrCode" style="margin: 1rem auto; padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #ddd; display: inline-block;"></div>
+                        <p class="small-text" style="margin-top: 0.5rem;">Scan with GCash app to pay</p>
+                    </div>
+                    
+                    <!-- Payment Link -->
+                    <div id="gcashLinkContainer" style="display: none; margin: 1.5rem 0;">
+                        <h4>Payment Link</h4>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="text" id="gcashPaymentLink" readonly style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem; background: #f8fafc;">
+                            <button type="button" class="btn btn-secondary" onclick="copyGcashLink()">
+                                Copy
+                            </button>
+                        </div>
+                        <p class="small-text">Share this link with the tenant for payment</p>
+                    </div>
+                    
+                    <!-- Email/SMS Option -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="sendNotification">
+                            <span>Send payment link to tenant via email/SMS</span>
+                        </label>
+                        <p class="small-text" style="margin-top: 0.25rem;">Requires email/SMS integration setup</p>
+                    </div>
+                    
+                    <div style="padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #bae6fd;">
+                        <h5 style="margin-top: 0; color: #0369a1;">GCash Payment Instructions</h5>
+                        <p class="small-text">1. Tenant scans QR code or clicks payment link</p>
+                        <p class="small-text">2. Tenant enters amount and completes payment</p>
+                        <p class="small-text">3. You will receive notification in GCash app</p>
+                        <p class="small-text">4. Record the payment reference number above</p>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeGcashPaymentModal()">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="generateGcashPayment()" id="generateGcashBtn">
+                            Generate QR Code & Link
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 3: SMS PREVIEW
+         ============================================ -->
+    <div class="modal-overlay hidden" id="smsModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>📱 SMS Receipt Preview</h3>
+                <button class="close-modal" onclick="closeSmsModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 1rem; font-family: monospace; margin-bottom: 1.5rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>From:</strong> MyTenantManager
+                    </div>
+                    <div style="white-space: pre-wrap; background: white; padding: 1rem; border-radius: 0.25rem; font-size: 0.875rem;">
+[My Tenant Manager]
+Payment Received ✅
+
+Tenant: <span id="smsTenant">Juan Dela Cruz</span>
+Amount: ₱<span id="smsAmount">5,000.00</span>
+Date: <span id="smsDate">Dec 15, 2024</span>
+Ref: <span id="smsRef">PMT-123456</span>
+
+Thank you for your payment!
+Bal: ₱<span id="smsBalance">0.00</span>
+                    </div>
+                </div>
+                
+                <div style="padding: 1rem; background: #f0f9ff; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                    <h4>SMS Integration Ready</h4>
+                    <p class="small-text">This app is structured to easily integrate with:</p>
+                    <ul style="margin: 0.5rem 0 0.5rem 1.5rem;">
+                        <li>Twilio API (International)</li>
+                        <li>Semaphore (Philippines)</li>
+                        <li>ClickSend</li>
+                        <li>Any SMS gateway with REST API</li>
+                    </ul>
+                    <p class="small-text" style="margin-top: 0.5rem;"><strong>Note:</strong> SMS integration requires API key setup in settings.</p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSmsModal()">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="sendTestSms()">
+                        Send Test SMS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 4: DELETE PAYMENT
+         ============================================ -->
+    <div class="modal-overlay hidden" id="deletePaymentModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Delete Payment</h3>
+                <button class="close-modal" onclick="closeDeletePaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <p><strong>⚠️ Warning:</strong> Deleting this payment will:</p>
+                <ul style="margin: 1rem 0 1rem 1.5rem;">
+                    <li>Reverse the payment in the ledger</li>
+                    <li>Update tenant's balance</li>
+                    <li>Mark corresponding rent/utilities as unpaid</li>
+                </ul>
+                <p>This action cannot be undone.</p>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeletePaymentModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" style="background: #dc2626;" onclick="confirmDeletePayment()" id="deletePaymentBtn">
+                        Delete Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Supabase - FIXED: Changed variable name to avoid conflict
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        let allPayments = [];
+        let allTenants = [];
+        let paymentToDeleteId = null;
+        let currentGcashQrCode = null;
+        
+        // Check authentication
+        supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                await loadTenants();
+                await loadPayments();
+                updateSummary();
+                
+                // Set default month filter to current month
+                const now = new Date();
+                const currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                document.getElementById('filterMonth').value = currentYearMonth;
+                
+                // Setup form event listeners
+                document.getElementById('paymentForm').addEventListener('submit', handlePaymentFormSubmit);
+                document.getElementById('paymentMethod').addEventListener('change', showPaymentMethodFields);
+                document.getElementById('gcashTenant').addEventListener('change', updateGcashAmount);
+            }
+        });
+        
+        // Load tenants
+        async function loadTenants() {
+            try {
+                const { data: tenants, error } = await supabaseClient
+                    .from('tenants')
+                    .select('id, name, monthly_rent')
+                    .eq('user_id', currentUser.id)
+                    .order('name');
+                
+                if (error) throw error;
+                
+                allTenants = tenants || [];
+                
+                // Update tenant dropdowns
+                const filterSelect = document.getElementById('filterTenant');
+                const paymentSelect = document.getElementById('paymentTenant');
+                const gcashSelect = document.getElementById('gcashTenant');
+                
+                filterSelect.innerHTML = '<option value="">All Tenants</option>';
+                paymentSelect.innerHTML = '<option value="">Select Tenant</option>';
+                gcashSelect.innerHTML = '<option value="">Select Tenant</option>';
+                
+                tenants.forEach(tenant => {
+                    filterSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                    paymentSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                    gcashSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+                alert('Failed to load tenants: ' + error.message);
+            }
+        }
+        
+        // Load payments
+        async function loadPayments() {
+            try {
+                const { data: payments, error } = await supabaseClient
+                    .from('payments')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('payment_date', { ascending: false });
+                
+                if (error) throw error;
+                
+                allPayments = payments || [];
+                filterPayments();
+                
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                alert('Failed to load payments: ' + error.message);
+            }
+        }
+        
+        // Filter payments
+        function filterPayments() {
+            const tenantId = document.getElementById('filterTenant').value;
+            const method = document.getElementById('filterMethod').value;
+            const month = document.getElementById('filterMonth').value;
+            
+            let filtered = allPayments;
+            
+            if (tenantId) {
+                filtered = filtered.filter(p => p.tenant_id === tenantId);
+            }
+            
+            if (method) {
+                filtered = filtered.filter(p => p.payment_method === method);
+            }
+            
+            if (month) {
+                filtered = filtered.filter(p => {
+                    const paymentMonth = p.payment_date ? p.payment_date.slice(0, 7) : '';
+                    return paymentMonth === month;
+                });
+            }
+            
+            updatePaymentsTable(filtered);
+            updateSummary(filtered);
+        }
+        
+        // Update payments table
+        function updatePaymentsTable(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (!payments || payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            📭 No payments found. Record a payment to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            payments.forEach(payment => {
+                const date = payment.payment_date ? new Date(payment.payment_date) : new Date();
+                
+                // Determine payment method icon
+                let methodIcon = '💵';
+                if (payment.payment_method === 'gcash') methodIcon = '📱';
+                if (payment.payment_method === 'bank_transfer') methodIcon = '🏦';
+                if (payment.payment_method === 'check') methodIcon = '📄';
+                
+                // Determine payment categories
+                let paymentFor = [];
+                if (payment.for_rent) paymentFor.push('🏠 Rent');
+                if (payment.for_electric) paymentFor.push('⚡ Electric');
+                if (payment.for_water) paymentFor.push('💧 Water');
+                if (payment.for_wifi) paymentFor.push('📶 Wi-Fi');
+                
+                html += `
+                    <tr>
+                        <td>${date.toLocaleDateString('en-PH')}</td>
+                        <td><strong>${payment.tenants?.name || 'Unknown Tenant'}</strong></td>
+                        <td class="currency">₱${parseFloat(payment.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                            <span class="status-pill ${payment.payment_method === 'gcash' ? 'status-active' : payment.payment_method === 'cash' ? 'status-moved-out' : 'status-left'}">
+                                ${methodIcon} ${payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'Unknown'}
+                            </span>
+                        </td>
+                        <td>${paymentFor.join(', ') || 'General'}</td>
+                        <td>${payment.notes || ''}</td>
+                        <td>
+                            <button class="action-btn delete" onclick="showDeletePaymentModal('${payment.id}')">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update summary stats
+        function updateSummary(payments = allPayments) {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            
+            let totalCash = 0;
+            let totalGCash = 0;
+            let totalBank = 0;
+            
+            payments.forEach(payment => {
+                const paymentMonth = payment.payment_date ? payment.payment_date.slice(0, 7) : '';
+                const amount = parseFloat(payment.amount || 0);
+                
+                if (paymentMonth === currentMonth) {
+                    if (payment.payment_method === 'cash') totalCash += amount;
+                    if (payment.payment_method === 'gcash') totalGCash += amount;
+                    if (payment.payment_method === 'bank_transfer') totalBank += amount;
+                }
+            });
+            
+            document.getElementById('totalCash').textContent = 
+                '₱' + totalCash.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalGCash').textContent = 
+                '₱' + totalGCash.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalBank').textContent = 
+                '₱' + totalBank.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+        }
+        
+        // ============================================
+        // RECORD PAYMENT MODAL FUNCTIONS
+        // ============================================
+        
+        function showAddPaymentModal() {
+            document.getElementById('paymentForm').reset();
+            
+            // Hide all payment method specific fields
+            document.getElementById('gcashFields').style.display = 'none';
+            document.getElementById('bankFields').style.display = 'none';
+            document.getElementById('checkFields').style.display = 'none';
+            
+            // Set default date to today
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+            
+            // Show modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+        
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+        
+        function showPaymentMethodFields() {
+            const method = document.getElementById('paymentMethod').value;
+            
+            // Hide all fields first
+            document.getElementById('gcashFields').style.display = 'none';
+            document.getElementById('bankFields').style.display = 'none';
+            document.getElementById('checkFields').style.display = 'none';
+            
+            // Show relevant fields
+            if (method === 'gcash') {
+                document.getElementById('gcashFields').style.display = 'block';
+            } else if (method === 'bank_transfer') {
+                document.getElementById('bankFields').style.display = 'block';
+            } else if (method === 'check') {
+                document.getElementById('checkFields').style.display = 'block';
+            }
+        }
+        
+        function updatePaymentMethodOptions() {
+            // Could be used to auto-fill amount based on tenant's outstanding balance
+            // For now, just a placeholder
+        }
+        
+        async function handlePaymentFormSubmit(e) {
+            e.preventDefault();
+            
+            const tenantId = document.getElementById('paymentTenant').value;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const method = document.getElementById('paymentMethod').value;
+            const notes = document.getElementById('paymentNotes').value;
+            
+            // Get payment categories
+            const forRent = document.getElementById('forRent').checked;
+            const forElectric = document.getElementById('forElectric').checked;
+            const forWater = document.getElementById('forWater').checked;
+            const forWifi = document.getElementById('forWifi').checked;
+            
+            // Validation
+            if (!tenantId || !paymentDate || !amount || isNaN(amount) || amount <= 0) {
+                alert('Please fill in all required fields with valid values.');
+                return;
+            }
+            
+            // Check if at least one payment category is selected
+            if (!forRent && !forElectric && !forWater && !forWifi) {
+                alert('Please select at least one payment category (Rent, Electric, Water, or Wi-Fi).');
+                return;
+            }
+            
+            // Disable save button
+            const saveBtn = document.getElementById('savePaymentBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Recording...';
+            
+            try {
+                // Prepare payment data
+                const paymentData = {
+                    user_id: currentUser.id,
+                    tenant_id: tenantId,
+                    amount: amount,
+                    payment_date: paymentDate,
+                    payment_method: method,
+                    for_rent: forRent,
+                    for_electric: forElectric,
+                    for_water: forWater,
+                    for_wifi: forWifi,
+                    notes: notes,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Add method-specific details to notes
+                let enhancedNotes = notes;
+                
+                if (method === 'gcash') {
+                    const gcashRef = document.getElementById('gcashReference').value;
+                    const gcashSender = document.getElementById('gcashSender').value;
+                    
+                    if (gcashRef || gcashSender) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'GCash Details:';
+                        if (gcashRef) enhancedNotes += ` Ref: ${gcashRef}`;
+                        if (gcashSender) enhancedNotes += ` From: ${gcashSender}`;
+                    }
+                } else if (method === 'bank_transfer') {
+                    const bankRef = document.getElementById('bankReference').value;
+                    const bankName = document.getElementById('bankName').value;
+                    
+                    if (bankRef || bankName) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'Bank Transfer Details:';
+                        if (bankName) enhancedNotes += ` Bank: ${bankName}`;
+                        if (bankRef) enhancedNotes += ` Ref: ${bankRef}`;
+                    }
+                } else if (method === 'check') {
+                    const checkNumber = document.getElementById('checkNumber').value;
+                    const checkDate = document.getElementById('checkDate').value;
+                    
+                    if (checkNumber || checkDate) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'Check Details:';
+                        if (checkNumber) enhancedNotes += ` Check #: ${checkNumber}`;
+                        if (checkDate) enhancedNotes += ` Date: ${checkDate}`;
+                    }
+                }
+                
+                paymentData.notes = enhancedNotes;
+                
+                // Insert payment
+                const { error: paymentError } = await supabaseClient
+                    .from('payments')
+                    .insert([paymentData]);
+                
+                if (paymentError) throw paymentError;
+                
+                // Create ledger entry
+                const categories = [];
+                if (forRent) categories.push('rent');
+                if (forElectric) categories.push('electric');
+                if (forWater) categories.push('water');
+                if (forWifi) categories.push('wifi');
+                
+                const { error: ledgerError } = await supabaseClient
+                    .from('ledger_entries')
+                    .insert([{
+                        user_id: currentUser.id,
+                        tenant_id: tenantId,
+                        type: 'payment',
+                        category: categories.join(', '),
+                        amount: amount,
+                        description: `Payment received for ${categories.join(', ')}`,
+                        entry_date: paymentDate,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (ledgerError) throw ledgerError;
+                
+                // If payment is for rent, mark rent as paid
+                if (forRent) {
+                    // Find unpaid rent for this tenant and mark as paid
+                    const { data: rentCharges, error: rentError } = await supabaseClient
+                        .from('rent_charges')
+                        .select('id')
+                        .eq('tenant_id', tenantId)
+                        .eq('paid', false)
+                        .order('month', { ascending: false })
+                        .limit(1);
+                    
+                    if (!rentError && rentCharges && rentCharges.length > 0) {
+                        await supabaseClient
+                            .from('rent_charges')
+                            .update({
+                                paid: true,
+                                paid_at: paymentDate + 'T00:00:00Z'
+                            })
+                            .eq('id', rentCharges[0].id);
+                    }
+                }
+                
+                alert('✅ Payment recorded successfully!\nLedger updated.');
+                closePaymentModal();
+                await loadPayments();
+                
+            } catch (error) {
+                console.error('Error recording payment:', error);
+                alert('❌ Failed to record payment: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Record Payment';
+            }
+        }
+        
+        // ============================================
+        // GCASH INTEGRATION FUNCTIONS
+        // ============================================
+        
+        function showGcashPaymentModal() {
+            document.getElementById('gcashPaymentForm').reset();
+            document.getElementById('gcashQrContainer').style.display = 'none';
+            document.getElementById('gcashLinkContainer').style.display = 'none';
+            
+            // Clear previous QR code
+            if (currentGcashQrCode) {
+                currentGcashQrCode.clear();
+                document.getElementById('gcashQrCode').innerHTML = '';
+            }
+            
+            document.getElementById('gcashPaymentModal').classList.remove('hidden');
+        }
+        
+        function closeGcashPaymentModal() {
+            document.getElementById('gcashPaymentModal').classList.add('hidden');
+        }
+        
+        function updateGcashAmount() {
+            const tenantId = document.getElementById('gcashTenant').value;
+            if (!tenantId) return;
+            
+            // Find tenant and set default amount to monthly rent
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (tenant && tenant.monthly_rent) {
+                document.getElementById('gcashAmount').value = tenant.monthly_rent;
+            }
+        }
+        
+        function generateGcashPayment() {
+            const tenantId = document.getElementById('gcashTenant').value;
+            const amount = document.getElementById('gcashAmount').value;
+            const description = document.getElementById('gcashDescription').value;
+            
+            if (!tenantId || !amount || parseFloat(amount) <= 0) {
+                alert('Please select a tenant and enter a valid amount.');
+                return;
+            }
+            
+            // Find tenant
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (!tenant) {
+                alert('Tenant not found.');
+                return;
+            }
+            
+            // Disable generate button
+            const generateBtn = document.getElementById('generateGcashBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            
+            try {
+                // Generate unique reference
+                const reference = 'GCASH-' + Date.now();
+                
+                // Create GCash payment URL (using GCash's official URL structure)
+                const paymentData = {
+                    amount: parseFloat(amount),
+                    description: description || `Rent payment for ${tenant.name}`,
+                    reference: reference,
+                    tenant: tenant.name
+                };
+                
+                // For demo purposes, we'll create a simulated GCash payment URL
+                // In production, you would use GCash's official API
+                const gcashUrl = `https://pay.gcash.com/pay?amount=${amount}&description=${encodeURIComponent(paymentData.description)}&reference=${reference}`;
+                
+                // Generate QR Code
+                const qrContainer = document.getElementById('gcashQrCode');
+                qrContainer.innerHTML = '';
+                
+                currentGcashQrCode = new QRCode(qrContainer, {
+                    text: gcashUrl,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                // Show QR code
+                document.getElementById('gcashQrContainer').style.display = 'block';
+                
+                // Generate payment link
+                document.getElementById('gcashPaymentLink').value = gcashUrl;
+                document.getElementById('gcashLinkContainer').style.display = 'block';
+                
+                // Update SMS preview
+                document.getElementById('smsTenant').textContent = tenant.name;
+                document.getElementById('smsAmount').textContent = parseFloat(amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                document.getElementById('smsDate').textContent = new Date().toLocaleDateString('en-PH');
+                document.getElementById('smsRef').textContent = reference;
+                
+                alert('✅ GCash payment link generated!\nShare the QR code or link with the tenant.');
+                
+            } catch (error) {
+                console.error('Error generating GCash payment:', error);
+                alert('❌ Failed to generate GCash payment: ' + error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR Code & Link';
+            }
+        }
+        
+        function copyGcashLink() {
+            const linkInput = document.getElementById('gcashPaymentLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                alert('✅ Payment link copied to clipboard!');
+            } catch (error) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(linkInput.value)
+                    .then(() => alert('✅ Payment link copied to clipboard!'))
+                    .catch(err => alert('❌ Failed to copy: ' + err));
+            }
+        }
+        
+        // ============================================
+        // SMS MODAL FUNCTIONS
+        // ============================================
+        
+        function showSmsModal() {
+            document.getElementById('smsModal').classList.remove('hidden');
+        }
+        
+        function closeSmsModal() {
+            document.getElementById('smsModal').classList.add('hidden');
+        }
+        
+        function sendTestSms() {
+            alert('📱 SMS integration requires API setup.\n\nFor Philippines: Use Semaphore API\nInternational: Use Twilio API\n\nConfigure API keys in Settings.');
+        }
+        
+        function showIntegrationGuide() {
+            alert('📚 Integration Guide:\n\n1. Get API key from SMS provider\n2. Add to Settings page\n3. Configure SMS templates\n4. Test with tenant numbers');
+        }
+        
+        // ============================================
+        // DELETE PAYMENT FUNCTIONS
+        // ============================================
+        
+        function showDeletePaymentModal(paymentId) {
+            paymentToDeleteId = paymentId;
+            document.getElementById('deletePaymentModal').classList.remove('hidden');
+        }
+        
+        function closeDeletePaymentModal() {
+            document.getElementById('deletePaymentModal').classList.add('hidden');
+            paymentToDeleteId = null;
+        }
+        
+        async function confirmDeletePayment() {
+            if (!paymentToDeleteId) {
+                alert('No payment selected for deletion.');
+                return;
+            }
+            
+            if (!confirm('⚠️ Are you absolutely sure you want to delete this payment?\n\nThis will reverse all ledger entries and cannot be undone.')) {
+                return;
+            }
+            
+            // Disable delete button
+            const deleteBtn = document.getElementById('deletePaymentBtn');
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+            
+            try {
+                // First, get the payment details
+                const { data: payment, error: fetchError } = await supabaseClient
+                    .from('payments')
+                    .select('*')
+                    .eq('id', paymentToDeleteId)
+                    .single();
+                
+                if (fetchError) throw fetchError;
+                
+                // Delete the payment
+                const { error: deleteError } = await supabaseClient
+                    .from('payments')
+                    .delete()
+                    .eq('id', paymentToDeleteId);
+                
+                if (deleteError) throw deleteError;
+                
+                // Create reversal ledger entry
+                const { error: ledgerError } = await supabaseClient
+                    .from('ledger_entries')
+                    .insert([{
+                        user_id: currentUser.id,
+                        tenant_id: payment.tenant_id,
+                        type: 'reversal',
+                        category: 'payment',
+                        amount: -payment.amount,
+                        description: `Payment reversal: ${payment.notes || 'No notes'}`,
+                        entry_date: new Date().toISOString().split('T')[0],
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (ledgerError) throw ledgerError;
+                
+                // If payment was for rent, mark rent as unpaid
+                if (payment.for_rent) {
+                    await supabaseClient
+                        .from('rent_charges')
+                        .update({
+                            paid: false,
+                            paid_at: null
+                        })
+                        .eq('tenant_id', payment.tenant_id)
+                        .eq('paid', true)
+                        .order('month', { ascending: false })
+                        .limit(1);
+                }
+                
+                alert('✅ Payment deleted successfully!\nLedger updated with reversal.');
+                closeDeletePaymentModal();
+                await loadPayments();
+                
+            } catch (error) {
+                console.error('Error deleting payment:', error);
+                alert('❌ Failed to delete payment: ' + error.message);
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Delete Payment';
+            }
+        }
+        
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(event.target) && 
+                event.target !== mobileBtn) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+    
+    <style>
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.hidden {
+            display: none;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 0.5rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .close-modal:hover {
+            color: #374151;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .small-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .action-btn {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            margin-right: 0.25rem;
+        }
+        
+        .action-btn.delete {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .currency {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        
+        .status-pill {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-moved-out {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-left {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</body>
+</html>                <option value="bank_transfer">Bank Transfer</option>
+                <option value="check">Check</option>
+                <option value="other">Other</option>
+            </select>
+            <input type="month" id="filterMonth" onchange="filterPayments()" class="form-group" style="flex: 1; min-width: 200px;">
+        </div>
+        
+        <!-- Payments Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Tenant</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>For</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            Loading payments...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stat-card">
+                <h3>Total Cash</h3>
+                <div class="stat-number" id="totalCash">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total GCash</h3>
+                <div class="stat-number" id="totalGCash">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+            <div class="stat-card">
+                <h3>Total Bank</h3>
+                <div class="stat-number" id="totalBank">₱0.00</div>
+                <span class="stat-trend">This month</span>
+            </div>
+        </div>
+        
+        <!-- GCash Integration Section -->
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #e0f2fe;">
+            <h3>📱 GCash Payment Integration</h3>
+            <p class="small-text" style="margin-bottom: 1rem;">
+                Generate QR codes or payment links for tenants. Ready for SMS/email integration.
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="showGcashPaymentModal()">
+                    Generate GCash Payment Link
+                </button>
+                <button class="btn btn-secondary" onclick="showSmsModal()">
+                    Preview SMS Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 1: RECORD PAYMENT (Fixed and Enhanced)
+         ============================================ -->
+    <div class="modal-overlay hidden" id="paymentModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>➕ Record Payment</h3>
+                <button class="close-modal" onclick="closePaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentTenant">Tenant *</label>
+                            <select id="paymentTenant" required onchange="updatePaymentMethodOptions()">
+                                <option value="">Select Tenant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentDate">Payment Date *</label>
+                            <input type="date" id="paymentDate" required value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentAmount">Amount (₱) *</label>
+                            <input type="number" id="paymentAmount" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Payment Method *</label>
+                            <select id="paymentMethod" required onchange="showPaymentMethodFields()">
+                                <option value="cash">Cash</option>
+                                <option value="gcash">GCash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="check">Check</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- GCash Specific Fields -->
+                    <div id="gcashFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">📱 GCash Payment Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="gcashReference">GCash Reference Number</label>
+                                <input type="text" id="gcashReference" placeholder="e.g., 1234567890">
+                                <p class="small-text" style="margin-top: 0.25rem;">Transaction reference from GCash app</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="gcashSender">Sender Name/Mobile</label>
+                                <input type="text" id="gcashSender" placeholder="e.g., +639123456789">
+                                <p class="small-text" style="margin-top: 0.25rem;">Tenant's name or mobile number</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Transfer Specific Fields -->
+                    <div id="bankFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">🏦 Bank Transfer Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="bankReference">Bank Reference Number</label>
+                                <input type="text" id="bankReference" placeholder="e.g., 1234567890">
+                                <p class="small-text" style="margin-top: 0.25rem;">Transaction reference from bank</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="bankName">Bank Name</label>
+                                <input type="text" id="bankName" placeholder="e.g., BDO, BPI, Metrobank, etc.">
+                                <p class="small-text" style="margin-top: 0.25rem;">Name of the bank used</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Check Specific Fields -->
+                    <div id="checkFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem;">📄 Check Payment Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkNumber">Check Number</label>
+                                <input type="text" id="checkNumber" placeholder="e.g., 123456">
+                                <p class="small-text" style="margin-top: 0.25rem;">Check number from the check</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="checkDate">Check Date</label>
+                                <input type="date" id="checkDate">
+                                <p class="small-text" style="margin-top: 0.25rem;">Date on the check</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Categories -->
+                    <div class="form-group">
+                        <label>Payment For *</label>
+                        <p class="small-text">Select what this payment covers:</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forRent" value="rent" checked>
+                                <div>
+                                    <div style="font-weight: 500;">🏠 Rent</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forElectric" value="electric">
+                                <div>
+                                    <div style="font-weight: 500;">⚡ Electric</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forWater" value="water">
+                                <div>
+                                    <div style="font-weight: 500;">💧 Water</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="forWifi" value="wifi">
+                                <div>
+                                    <div style="font-weight: 500;">📶 Wi-Fi</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="paymentNotes">Notes (Optional)</label>
+                        <textarea id="paymentNotes" rows="3" placeholder="Payment details, reference numbers, special instructions, etc."></textarea>
+                    </div>
+                    
+                    <div style="padding: 1rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                        <p><strong>Note:</strong> This payment will:</p>
+                        <ul style="margin: 0.5rem 0 0.5rem 1.5rem;">
+                            <li>Update tenant's balance in ledger</li>
+                            <li>Mark corresponding rent/utilities as paid (if applicable)</li>
+                            <li>Be available for SMS/email notifications</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="savePaymentBtn">
+                            Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 2: GCASH PAYMENT GENERATION
+         ============================================ -->
+    <div class="modal-overlay hidden" id="gcashPaymentModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>📱 Generate GCash Payment</h3>
+                <button class="close-modal" onclick="closeGcashPaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="gcashPaymentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gcashTenant">Tenant *</label>
+                            <select id="gcashTenant" required onchange="updateGcashAmount()">
+                                <option value="">Select Tenant</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gcashAmount">Amount (₱) *</label>
+                            <input type="number" id="gcashAmount" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gcashDescription">Payment Description</label>
+                        <input type="text" id="gcashDescription" placeholder="e.g., Rent for December 2024">
+                    </div>
+                    
+                    <!-- QR Code Display -->
+                    <div id="gcashQrContainer" style="display: none; margin: 1.5rem 0; text-align: center;">
+                        <h4>GCash QR Code</h4>
+                        <div id="gcashQrCode" style="margin: 1rem auto; padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #ddd; display: inline-block;"></div>
+                        <p class="small-text" style="margin-top: 0.5rem;">Scan with GCash app to pay</p>
+                    </div>
+                    
+                    <!-- Payment Link -->
+                    <div id="gcashLinkContainer" style="display: none; margin: 1.5rem 0;">
+                        <h4>Payment Link</h4>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="text" id="gcashPaymentLink" readonly style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem; background: #f8fafc;">
+                            <button type="button" class="btn btn-secondary" onclick="copyGcashLink()">
+                                Copy
+                            </button>
+                        </div>
+                        <p class="small-text">Share this link with the tenant for payment</p>
+                    </div>
+                    
+                    <!-- Email/SMS Option -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="sendNotification">
+                            <span>Send payment link to tenant via email/SMS</span>
+                        </label>
+                        <p class="small-text" style="margin-top: 0.25rem;">Requires email/SMS integration setup</p>
+                    </div>
+                    
+                    <div style="padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #bae6fd;">
+                        <h5 style="margin-top: 0; color: #0369a1;">GCash Payment Instructions</h5>
+                        <p class="small-text">1. Tenant scans QR code or clicks payment link</p>
+                        <p class="small-text">2. Tenant enters amount and completes payment</p>
+                        <p class="small-text">3. You will receive notification in GCash app</p>
+                        <p class="small-text">4. Record the payment reference number above</p>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeGcashPaymentModal()">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="generateGcashPayment()" id="generateGcashBtn">
+                            Generate QR Code & Link
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 3: SMS PREVIEW
+         ============================================ -->
+    <div class="modal-overlay hidden" id="smsModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>📱 SMS Receipt Preview</h3>
+                <button class="close-modal" onclick="closeSmsModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 1rem; font-family: monospace; margin-bottom: 1.5rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>From:</strong> MyTenantManager
+                    </div>
+                    <div style="white-space: pre-wrap; background: white; padding: 1rem; border-radius: 0.25rem; font-size: 0.875rem;">
+[My Tenant Manager]
+Payment Received ✅
+
+Tenant: <span id="smsTenant">Juan Dela Cruz</span>
+Amount: ₱<span id="smsAmount">5,000.00</span>
+Date: <span id="smsDate">Dec 15, 2024</span>
+Ref: <span id="smsRef">PMT-123456</span>
+
+Thank you for your payment!
+Bal: ₱<span id="smsBalance">0.00</span>
+                    </div>
+                </div>
+                
+                <div style="padding: 1rem; background: #f0f9ff; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                    <h4>SMS Integration Ready</h4>
+                    <p class="small-text">This app is structured to easily integrate with:</p>
+                    <ul style="margin: 0.5rem 0 0.5rem 1.5rem;">
+                        <li>Twilio API (International)</li>
+                        <li>Semaphore (Philippines)</li>
+                        <li>ClickSend</li>
+                        <li>Any SMS gateway with REST API</li>
+                    </ul>
+                    <p class="small-text" style="margin-top: 0.5rem;"><strong>Note:</strong> SMS integration requires API key setup in settings.</p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeSmsModal()">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="sendTestSms()">
+                        Send Test SMS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 4: DELETE PAYMENT
+         ============================================ -->
+    <div class="modal-overlay hidden" id="deletePaymentModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Delete Payment</h3>
+                <button class="close-modal" onclick="closeDeletePaymentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <p><strong>⚠️ Warning:</strong> Deleting this payment will:</p>
+                <ul style="margin: 1rem 0 1rem 1.5rem;">
+                    <li>Reverse the payment in the ledger</li>
+                    <li>Update tenant's balance</li>
+                    <li>Mark corresponding rent/utilities as unpaid</li>
+                </ul>
+                <p>This action cannot be undone.</p>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeletePaymentModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" style="background: #dc2626;" onclick="confirmDeletePayment()" id="deletePaymentBtn">
+                        Delete Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Supabase - FIXED: Changed variable name to avoid conflict
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        let allPayments = [];
+        let allTenants = [];
+        let paymentToDeleteId = null;
+        let currentGcashQrCode = null;
+        
+        // Check authentication
+        supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                await loadTenants();
+                await loadPayments();
+                updateSummary();
+                
+                // Set default month filter to current month
+                const now = new Date();
+                const currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                document.getElementById('filterMonth').value = currentYearMonth;
+                
+                // Setup form event listeners
+                document.getElementById('paymentForm').addEventListener('submit', handlePaymentFormSubmit);
+                document.getElementById('paymentMethod').addEventListener('change', showPaymentMethodFields);
+                document.getElementById('gcashTenant').addEventListener('change', updateGcashAmount);
+            }
+        });
+        
+        // Load tenants
+        async function loadTenants() {
+            try {
+                const { data: tenants, error } = await supabaseClient
+                    .from('tenants')
+                    .select('id, name, monthly_rent')
+                    .eq('user_id', currentUser.id)
+                    .order('name');
+                
+                if (error) throw error;
+                
+                allTenants = tenants || [];
+                
+                // Update tenant dropdowns
+                const filterSelect = document.getElementById('filterTenant');
+                const paymentSelect = document.getElementById('paymentTenant');
+                const gcashSelect = document.getElementById('gcashTenant');
+                
+                filterSelect.innerHTML = '<option value="">All Tenants</option>';
+                paymentSelect.innerHTML = '<option value="">Select Tenant</option>';
+                gcashSelect.innerHTML = '<option value="">Select Tenant</option>';
+                
+                tenants.forEach(tenant => {
+                    filterSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                    paymentSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                    gcashSelect.innerHTML += `<option value="${tenant.id}">${tenant.name}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+                alert('Failed to load tenants: ' + error.message);
+            }
+        }
+        
+        // Load payments
+        async function loadPayments() {
+            try {
+                const { data: payments, error } = await supabaseClient
+                    .from('payments')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('payment_date', { ascending: false });
+                
+                if (error) throw error;
+                
+                allPayments = payments || [];
+                filterPayments();
+                
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                alert('Failed to load payments: ' + error.message);
+            }
+        }
+        
+        // Filter payments
+        function filterPayments() {
+            const tenantId = document.getElementById('filterTenant').value;
+            const method = document.getElementById('filterMethod').value;
+            const month = document.getElementById('filterMonth').value;
+            
+            let filtered = allPayments;
+            
+            if (tenantId) {
+                filtered = filtered.filter(p => p.tenant_id === tenantId);
+            }
+            
+            if (method) {
+                filtered = filtered.filter(p => p.payment_method === method);
+            }
+            
+            if (month) {
+                filtered = filtered.filter(p => {
+                    const paymentMonth = p.payment_date ? p.payment_date.slice(0, 7) : '';
+                    return paymentMonth === month;
+                });
+            }
+            
+            updatePaymentsTable(filtered);
+            updateSummary(filtered);
+        }
+        
+        // Update payments table
+        function updatePaymentsTable(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (!payments || payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            📭 No payments found. Record a payment to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            payments.forEach(payment => {
+                const date = payment.payment_date ? new Date(payment.payment_date) : new Date();
+                
+                // Determine payment method icon
+                let methodIcon = '💵';
+                if (payment.payment_method === 'gcash') methodIcon = '📱';
+                if (payment.payment_method === 'bank_transfer') methodIcon = '🏦';
+                if (payment.payment_method === 'check') methodIcon = '📄';
+                
+                // Determine payment categories
+                let paymentFor = [];
+                if (payment.for_rent) paymentFor.push('🏠 Rent');
+                if (payment.for_electric) paymentFor.push('⚡ Electric');
+                if (payment.for_water) paymentFor.push('💧 Water');
+                if (payment.for_wifi) paymentFor.push('📶 Wi-Fi');
+                
+                html += `
+                    <tr>
+                        <td>${date.toLocaleDateString('en-PH')}</td>
+                        <td><strong>${payment.tenants?.name || 'Unknown Tenant'}</strong></td>
+                        <td class="currency">₱${parseFloat(payment.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                            <span class="status-pill ${payment.payment_method === 'gcash' ? 'status-active' : payment.payment_method === 'cash' ? 'status-moved-out' : 'status-left'}">
+                                ${methodIcon} ${payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : 'Unknown'}
+                            </span>
+                        </td>
+                        <td>${paymentFor.join(', ') || 'General'}</td>
+                        <td>${payment.notes || ''}</td>
+                        <td>
+                            <button class="action-btn delete" onclick="showDeletePaymentModal('${payment.id}')">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update summary stats
+        function updateSummary(payments = allPayments) {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            
+            let totalCash = 0;
+            let totalGCash = 0;
+            let totalBank = 0;
+            
+            payments.forEach(payment => {
+                const paymentMonth = payment.payment_date ? payment.payment_date.slice(0, 7) : '';
+                const amount = parseFloat(payment.amount || 0);
+                
+                if (paymentMonth === currentMonth) {
+                    if (payment.payment_method === 'cash') totalCash += amount;
+                    if (payment.payment_method === 'gcash') totalGCash += amount;
+                    if (payment.payment_method === 'bank_transfer') totalBank += amount;
+                }
+            });
+            
+            document.getElementById('totalCash').textContent = 
+                '₱' + totalCash.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalGCash').textContent = 
+                '₱' + totalGCash.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalBank').textContent = 
+                '₱' + totalBank.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+        }
+        
+        // ============================================
+        // RECORD PAYMENT MODAL FUNCTIONS
+        // ============================================
+        
+        function showAddPaymentModal() {
+            document.getElementById('paymentForm').reset();
+            
+            // Hide all payment method specific fields
+            document.getElementById('gcashFields').style.display = 'none';
+            document.getElementById('bankFields').style.display = 'none';
+            document.getElementById('checkFields').style.display = 'none';
+            
+            // Set default date to today
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+            
+            // Show modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+        
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+        
+        function showPaymentMethodFields() {
+            const method = document.getElementById('paymentMethod').value;
+            
+            // Hide all fields first
+            document.getElementById('gcashFields').style.display = 'none';
+            document.getElementById('bankFields').style.display = 'none';
+            document.getElementById('checkFields').style.display = 'none';
+            
+            // Show relevant fields
+            if (method === 'gcash') {
+                document.getElementById('gcashFields').style.display = 'block';
+            } else if (method === 'bank_transfer') {
+                document.getElementById('bankFields').style.display = 'block';
+            } else if (method === 'check') {
+                document.getElementById('checkFields').style.display = 'block';
+            }
+        }
+        
+        function updatePaymentMethodOptions() {
+            // Could be used to auto-fill amount based on tenant's outstanding balance
+            // For now, just a placeholder
+        }
+        
+        async function handlePaymentFormSubmit(e) {
+            e.preventDefault();
+            
+            const tenantId = document.getElementById('paymentTenant').value;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const method = document.getElementById('paymentMethod').value;
+            const notes = document.getElementById('paymentNotes').value;
+            
+            // Get payment categories
+            const forRent = document.getElementById('forRent').checked;
+            const forElectric = document.getElementById('forElectric').checked;
+            const forWater = document.getElementById('forWater').checked;
+            const forWifi = document.getElementById('forWifi').checked;
+            
+            // Validation
+            if (!tenantId || !paymentDate || !amount || isNaN(amount) || amount <= 0) {
+                alert('Please fill in all required fields with valid values.');
+                return;
+            }
+            
+            // Check if at least one payment category is selected
+            if (!forRent && !forElectric && !forWater && !forWifi) {
+                alert('Please select at least one payment category (Rent, Electric, Water, or Wi-Fi).');
+                return;
+            }
+            
+            // Disable save button
+            const saveBtn = document.getElementById('savePaymentBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Recording...';
+            
+            try {
+                // Prepare payment data
+                const paymentData = {
+                    user_id: currentUser.id,
+                    tenant_id: tenantId,
+                    amount: amount,
+                    payment_date: paymentDate,
+                    payment_method: method,
+                    for_rent: forRent,
+                    for_electric: forElectric,
+                    for_water: forWater,
+                    for_wifi: forWifi,
+                    notes: notes,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Add method-specific details to notes
+                let enhancedNotes = notes;
+                
+                if (method === 'gcash') {
+                    const gcashRef = document.getElementById('gcashReference').value;
+                    const gcashSender = document.getElementById('gcashSender').value;
+                    
+                    if (gcashRef || gcashSender) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'GCash Details:';
+                        if (gcashRef) enhancedNotes += ` Ref: ${gcashRef}`;
+                        if (gcashSender) enhancedNotes += ` From: ${gcashSender}`;
+                    }
+                } else if (method === 'bank_transfer') {
+                    const bankRef = document.getElementById('bankReference').value;
+                    const bankName = document.getElementById('bankName').value;
+                    
+                    if (bankRef || bankName) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'Bank Transfer Details:';
+                        if (bankName) enhancedNotes += ` Bank: ${bankName}`;
+                        if (bankRef) enhancedNotes += ` Ref: ${bankRef}`;
+                    }
+                } else if (method === 'check') {
+                    const checkNumber = document.getElementById('checkNumber').value;
+                    const checkDate = document.getElementById('checkDate').value;
+                    
+                    if (checkNumber || checkDate) {
+                        enhancedNotes = (notes ? notes + '\n' : '') + 'Check Details:';
+                        if (checkNumber) enhancedNotes += ` Check #: ${checkNumber}`;
+                        if (checkDate) enhancedNotes += ` Date: ${checkDate}`;
+                    }
+                }
+                
+                paymentData.notes = enhancedNotes;
+                
+                // Insert payment
+                const { error: paymentError } = await supabaseClient
+                    .from('payments')
+                    .insert([paymentData]);
+                
+                if (paymentError) throw paymentError;
+                
+                // Create ledger entry
+                const categories = [];
+                if (forRent) categories.push('rent');
+                if (forElectric) categories.push('electric');
+                if (forWater) categories.push('water');
+                if (forWifi) categories.push('wifi');
+                
+                const { error: ledgerError } = await supabaseClient
+                    .from('ledger_entries')
+                    .insert([{
+                        user_id: currentUser.id,
+                        tenant_id: tenantId,
+                        type: 'payment',
+                        category: categories.join(', '),
+                        amount: amount,
+                        description: `Payment received for ${categories.join(', ')}`,
+                        entry_date: paymentDate,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (ledgerError) throw ledgerError;
+                
+                // If payment is for rent, mark rent as paid
+                if (forRent) {
+                    // Find unpaid rent for this tenant and mark as paid
+                    const { data: rentCharges, error: rentError } = await supabaseClient
+                        .from('rent_charges')
+                        .select('id')
+                        .eq('tenant_id', tenantId)
+                        .eq('paid', false)
+                        .order('month', { ascending: false })
+                        .limit(1);
+                    
+                    if (!rentError && rentCharges && rentCharges.length > 0) {
+                        await supabaseClient
+                            .from('rent_charges')
+                            .update({
+                                paid: true,
+                                paid_at: paymentDate + 'T00:00:00Z'
+                            })
+                            .eq('id', rentCharges[0].id);
+                    }
+                }
+                
+                alert('✅ Payment recorded successfully!\nLedger updated.');
+                closePaymentModal();
+                await loadPayments();
+                
+            } catch (error) {
+                console.error('Error recording payment:', error);
+                alert('❌ Failed to record payment: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Record Payment';
+            }
+        }
+        
+        // ============================================
+        // GCASH INTEGRATION FUNCTIONS
+        // ============================================
+        
+        function showGcashPaymentModal() {
+            document.getElementById('gcashPaymentForm').reset();
+            document.getElementById('gcashQrContainer').style.display = 'none';
+            document.getElementById('gcashLinkContainer').style.display = 'none';
+            
+            // Clear previous QR code
+            if (currentGcashQrCode) {
+                currentGcashQrCode.clear();
+                document.getElementById('gcashQrCode').innerHTML = '';
+            }
+            
+            document.getElementById('gcashPaymentModal').classList.remove('hidden');
+        }
+        
+        function closeGcashPaymentModal() {
+            document.getElementById('gcashPaymentModal').classList.add('hidden');
+        }
+        
+        function updateGcashAmount() {
+            const tenantId = document.getElementById('gcashTenant').value;
+            if (!tenantId) return;
+            
+            // Find tenant and set default amount to monthly rent
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (tenant && tenant.monthly_rent) {
+                document.getElementById('gcashAmount').value = tenant.monthly_rent;
+            }
+        }
+        
+        function generateGcashPayment() {
+            const tenantId = document.getElementById('gcashTenant').value;
+            const amount = document.getElementById('gcashAmount').value;
+            const description = document.getElementById('gcashDescription').value;
+            
+            if (!tenantId || !amount || parseFloat(amount) <= 0) {
+                alert('Please select a tenant and enter a valid amount.');
+                return;
+            }
+            
+            // Find tenant
+            const tenant = allTenants.find(t => t.id === tenantId);
+            if (!tenant) {
+                alert('Tenant not found.');
+                return;
+            }
+            
+            // Disable generate button
+            const generateBtn = document.getElementById('generateGcashBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            
+            try {
+                // Generate unique reference
+                const reference = 'GCASH-' + Date.now();
+                
+                // Create GCash payment URL (using GCash's official URL structure)
+                const paymentData = {
+                    amount: parseFloat(amount),
+                    description: description || `Rent payment for ${tenant.name}`,
+                    reference: reference,
+                    tenant: tenant.name
+                };
+                
+                // For demo purposes, we'll create a simulated GCash payment URL
+                // In production, you would use GCash's official API
+                const gcashUrl = `https://pay.gcash.com/pay?amount=${amount}&description=${encodeURIComponent(paymentData.description)}&reference=${reference}`;
+                
+                // Generate QR Code
+                const qrContainer = document.getElementById('gcashQrCode');
+                qrContainer.innerHTML = '';
+                
+                currentGcashQrCode = new QRCode(qrContainer, {
+                    text: gcashUrl,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                // Show QR code
+                document.getElementById('gcashQrContainer').style.display = 'block';
+                
+                // Generate payment link
+                document.getElementById('gcashPaymentLink').value = gcashUrl;
+                document.getElementById('gcashLinkContainer').style.display = 'block';
+                
+                // Update SMS preview
+                document.getElementById('smsTenant').textContent = tenant.name;
+                document.getElementById('smsAmount').textContent = parseFloat(amount).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+                document.getElementById('smsDate').textContent = new Date().toLocaleDateString('en-PH');
+                document.getElementById('smsRef').textContent = reference;
+                
+                alert('✅ GCash payment link generated!\nShare the QR code or link with the tenant.');
+                
+            } catch (error) {
+                console.error('Error generating GCash payment:', error);
+                alert('❌ Failed to generate GCash payment: ' + error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR Code & Link';
+            }
+        }
+        
+        function copyGcashLink() {
+            const linkInput = document.getElementById('gcashPaymentLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                alert('✅ Payment link copied to clipboard!');
+            } catch (error) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(linkInput.value)
+                    .then(() => alert('✅ Payment link copied to clipboard!'))
+                    .catch(err => alert('❌ Failed to copy: ' + err));
+            }
+        }
+        
+        // ============================================
+        // SMS MODAL FUNCTIONS
+        // ============================================
+        
+        function showSmsModal() {
+            document.getElementById('smsModal').classList.remove('hidden');
+        }
+        
+        function closeSmsModal() {
+            document.getElementById('smsModal').classList.add('hidden');
+        }
+        
+        function sendTestSms() {
+            alert('📱 SMS integration requires API setup.\n\nFor Philippines: Use Semaphore API\nInternational: Use Twilio API\n\nConfigure API keys in Settings.');
+        }
+        
+        function showIntegrationGuide() {
+            alert('📚 Integration Guide:\n\n1. Get API key from SMS provider\n2. Add to Settings page\n3. Configure SMS templates\n4. Test with tenant numbers');
+        }
+        
+        // ============================================
+        // DELETE PAYMENT FUNCTIONS
+        // ============================================
+        
+        function showDeletePaymentModal(paymentId) {
+            paymentToDeleteId = paymentId;
+            document.getElementById('deletePaymentModal').classList.remove('hidden');
+        }
+        
+        function closeDeletePaymentModal() {
+            document.getElementById('deletePaymentModal').classList.add('hidden');
+            paymentToDeleteId = null;
+        }
+        
+        async function confirmDeletePayment() {
+            if (!paymentToDeleteId) {
+                alert('No payment selected for deletion.');
+                return;
+            }
+            
+            if (!confirm('⚠️ Are you absolutely sure you want to delete this payment?\n\nThis will reverse all ledger entries and cannot be undone.')) {
+                return;
+            }
+            
+            // Disable delete button
+            const deleteBtn = document.getElementById('deletePaymentBtn');
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+            
+            try {
+                // First, get the payment details
+                const { data: payment, error: fetchError } = await supabaseClient
+                    .from('payments')
+                    .select('*')
+                    .eq('id', paymentToDeleteId)
+                    .single();
+                
+                if (fetchError) throw fetchError;
+                
+                // Delete the payment
+                const { error: deleteError } = await supabaseClient
+                    .from('payments')
+                    .delete()
+                    .eq('id', paymentToDeleteId);
+                
+                if (deleteError) throw deleteError;
+                
+                // Create reversal ledger entry
+                const { error: ledgerError } = await supabaseClient
+                    .from('ledger_entries')
+                    .insert([{
+                        user_id: currentUser.id,
+                        tenant_id: payment.tenant_id,
+                        type: 'reversal',
+                        category: 'payment',
+                        amount: -payment.amount,
+                        description: `Payment reversal: ${payment.notes || 'No notes'}`,
+                        entry_date: new Date().toISOString().split('T')[0],
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (ledgerError) throw ledgerError;
+                
+                // If payment was for rent, mark rent as unpaid
+                if (payment.for_rent) {
+                    await supabaseClient
+                        .from('rent_charges')
+                        .update({
+                            paid: false,
+                            paid_at: null
+                        })
+                        .eq('tenant_id', payment.tenant_id)
+                        .eq('paid', true)
+                        .order('month', { ascending: false })
+                        .limit(1);
+                }
+                
+                alert('✅ Payment deleted successfully!\nLedger updated with reversal.');
+                closeDeletePaymentModal();
+                await loadPayments();
+                
+            } catch (error) {
+                console.error('Error deleting payment:', error);
+                alert('❌ Failed to delete payment: ' + error.message);
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Delete Payment';
+            }
+        }
+        
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(event.target) && 
+                event.target !== mobileBtn) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+    
+    <style>
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.hidden {
+            display: none;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 0.5rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .close-modal:hover {
+            color: #374151;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .small-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .action-btn {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            margin-right: 0.25rem;
+        }
+        
+        .action-btn.delete {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .currency {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        
+        .status-pill {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-moved-out {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-left {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</body>
+</html> html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments - My Tenant Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Mobile Menu Button -->
