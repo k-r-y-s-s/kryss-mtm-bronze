@@ -8,7 +8,6 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- LOADING SCREEN (5-10 seconds after login as specified) -->
     <div class="loading-screen" id="loadingScreen">
         <div>
             <div class="loading-spinner"></div>
@@ -35,6 +34,83 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
                 </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    Sign In to Dashboard
+                </button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a href="signup.html">Start 7-day free trial</a></p>
+                <p><a href="index.html">← Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Supabase credentials
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        
+        // Initialize Supabase CORRECTLY
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Hide loading screen initially
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        // Check if already logged in
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                document.getElementById('loadingScreen').classList.remove('hidden');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 3000);
+            }
+        });
+        
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Show loading
+            document.getElementById('loadingScreen').classList.remove('hidden');
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email.trim(),
+                    password: password
+                });
+                
+                if (error) {
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                    
+                    if (error.message.includes("Invalid login credentials")) {
+                        alert("❌ Invalid email or password.\nPlease check your credentials or sign up first.");
+                    } else {
+                        alert("Login error: " + error.message);
+                    }
+                    return;
+                }
+                
+                // Login successful
+                console.log("Login successful:", data.user.email);
+                
+                // Wait 5-10 seconds then redirect
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 7000);
+                
+            } catch (error) {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                alert("Login failed: " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>                </div>
                 
                 <button type="submit" class="btn btn-primary btn-block">
                     Sign In to Dashboard
