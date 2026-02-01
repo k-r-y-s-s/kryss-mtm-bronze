@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledger - My Tenant Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🏠 My Tenant Manager</h2>
+            <p class="sidebar-subtitle">Complete Ledger System</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="tenants.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Tenants</span>
+            </a>
+            <a href="utilities.html" class="nav-link">
+                <span class="nav-icon">⚡</span>
+                <span>Utilities</span>
+            </a>
+            <a href="rent.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Rent</span>
+            </a>
+            <a href="payments.html" class="nav-link">
+                <span class="nav-icon">💳</span>
+                <span>Payments</span>
+            </a>
+            <a href="ledger.html" class="nav-link active">
+                <span class="nav-icon">📒</span>
+                <span>Ledger</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-outline" style="width: 100%;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>📒 Ledger System</h1>
+                <p class="small-text">General ledger + Tenant-specific ledgers with running balance</p>
+            </div>
+            <div>
+                <button onclick="exportToCSV()" class="btn btn-secondary">
+                    📥 Export CSV
+                </button>
+                <button onclick="printLedger()" class="btn btn-secondary" style="margin-left: 0.5rem;">
+                    🖨️ Print
+                </button>
+            </div>
+        </div>
+        
+        <!-- View Toggle -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem;">
+            <button id="viewGeneral" class="btn btn-primary" onclick="switchView('general')">
+                General Ledger
+            </button>
+            <button id="viewTenant" class="btn btn-outline" onclick="switchView('tenant')">
+                Tenant Ledger
+            </button>
+        </div>
+        
+        <!-- ============================================
+             GENERAL LEDGER VIEW
+             ============================================ -->
+        <div id="generalLedgerView">
+            <!-- Filter Options -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <select id="filterType" onchange="filterGeneralLedger()" class="form-group" style="flex: 1; min-width: 150px;">
+                    <option value="">All Types</option>
+                    <option value="charge">Charges</option>
+                    <option value="payment">Payments</option>
+                </select>
+                <select id="filterCategory" onchange="filterGeneralLedger()" class="form-group" style="flex: 1; min-width: 150px;">
+                    <option value="">All Categories</option>
+                    <option value="rent">Rent</option>
+                    <option value="electric">Electric</option>
+                    <option value="water">Water</option>
+                    <option value="wifi">Wi-Fi</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="date" id="filterDateFrom" onchange="filterGeneralLedger()" class="form-group" style="flex: 1; min-width: 150px;" placeholder="From Date">
+                <input type="date" id="filterDateTo" onchange="filterGeneralLedger()" class="form-group" style="flex: 1; min-width: 150px;" placeholder="To Date">
+                <button onclick="resetGeneralFilters()" class="btn btn-outline" style="height: fit-content; align-self: flex-end;">
+                    Reset
+                </button>
+            </div>
+            
+            <!-- General Ledger Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>📋 General Ledger</h2>
+                    <span class="small-text">All transactions chronological</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Tenant</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="generalLedgerTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem;">
+                                Loading general ledger...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="stats-grid" style="margin-top: 2rem;">
+                <div class="stat-card">
+                    <h3>Total Charges</h3>
+                    <div class="stat-number currency-negative" id="totalCharges">₱0.00</div>
+                    <span class="stat-trend">Rent + Utilities</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Payments</h3>
+                    <div class="stat-number currency-positive" id="totalPayments">₱0.00</div>
+                    <span class="stat-trend">Received</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Net Balance</h3>
+                    <div class="stat-number" id="netBalance">₱0.00</div>
+                    <span class="stat-trend">Current</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============================================
+             TENANT LEDGER VIEW
+             ============================================ -->
+        <div id="tenantLedgerView" style="display: none;">
+            <!-- Tenant Selection -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 300px;">
+                    <label for="selectTenant">Select Tenant</label>
+                    <select id="selectTenant" onchange="loadTenantLedger()" style="width: 100%;">
+                        <option value="">Select a tenant...</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="date" id="tenantDateFrom" onchange="loadTenantLedger()" class="form-group" style="flex: 1; min-width: 150px;" placeholder="From Date">
+                    <input type="date" id="tenantDateTo" onchange="loadTenantLedger()" class="form-group" style="flex: 1; min-width: 150px;" placeholder="To Date">
+                    <button onclick="resetTenantFilters()" class="btn btn-outline" style="height: fit-content;">
+                        Reset
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tenant Info Card -->
+            <div id="tenantInfoCard" style="display: none; margin-bottom: 1.5rem;">
+                <div class="stat-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 id="tenantName">Loading...</h3>
+                            <p class="small-text" id="tenantDetails">Monthly rent: ₱0.00 | Due day: 0th</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="stat-number" id="tenantCurrentBalance">₱0.00</div>
+                            <span class="stat-trend" id="tenantBalanceStatus">Current balance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tenant Ledger Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>👤 Tenant Ledger</h2>
+                    <span class="small-text" id="tenantLedgerSubtitle">Filtered by tenant with running balance</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Charge</th>
+                            <th>Payment</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenantLedgerTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem;">
+                                Select a tenant to view their ledger.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile-friendly ledger view -->
+            <div class="table-container mobile-stacked hidden" style="margin-top: 1rem;">
+                <table class="data-table">
+                    <tbody id="mobileTenantLedgerBody">
+                        <!-- Will be populated for mobile -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL: TRANSACTION DETAILS
+         ============================================ -->
+    <div class="modal-overlay hidden" id="transactionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Transaction Details</h3>
+                <button class="close-modal" onclick="closeTransactionModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 id="transactionTitle">Loading...</h4>
+                    <p class="small-text" id="transactionDate">Date: Loading...</p>
+                </div>
+                
+                <div style="display: grid; gap: 1rem;">
+                    <div>
+                        <strong>Tenant:</strong>
+                        <p id="transactionTenant">Loading...</p>
+                    </div>
+                    <div>
+                        <strong>Type:</strong>
+                        <span id="transactionType" class="status-pill">Loading</span>
+                    </div>
+                    <div>
+                        <strong>Category:</strong>
+                        <span id="transactionCategory" class="status-pill">Loading</span>
+                    </div>
+                    <div>
+                        <strong>Amount:</strong>
+                        <p id="transactionAmount" class="currency">Loading...</p>
+                    </div>
+                    <div>
+                        <strong>Description:</strong>
+                        <p id="transactionDescription">Loading...</p>
+                    </div>
+                    <div>
+                        <strong>Running Balance:</strong>
+                        <p id="transactionBalance" class="currency">Loading...</p>
+                    </div>
+                    <div id="transactionNotes" style="display: none;">
+                        <strong>Notes:</strong>
+                        <p id="transactionNotesContent">Loading...</p>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeTransactionModal()">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        let allLedgerEntries = [];
+        let allTenants = [];
+        let currentView = 'general';
+        let selectedTenantId = null;
+        
+        // Check authentication
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                await loadTenants();
+                await loadGeneralLedger();
+                
+                // Check if tenant ID is stored from dashboard
+                const storedTenantId = localStorage.getItem('selectedTenantId');
+                if (storedTenantId) {
+                    localStorage.removeItem('selectedTenantId');
+                    switchView('tenant');
+                    document.getElementById('selectTenant').value = storedTenantId;
+                    loadTenantLedger();
+                }
+                
+                // Setup mobile/desktop view
+                setupResponsiveLedger();
+                window.addEventListener('resize', setupResponsiveLedger);
+            }
+        });
+        
+        // Setup responsive ledger tables
+        function setupResponsiveLedger() {
+            const desktopTable = document.querySelector('#tenantLedgerView .table-container');
+            const mobileTable = document.querySelector('#tenantLedgerView .mobile-stacked');
+            
+            if (window.innerWidth <= 1024) {
+                // Mobile view
+                desktopTable.classList.add('hidden');
+                mobileTable.classList.remove('hidden');
+            } else {
+                // Desktop view
+                desktopTable.classList.remove('hidden');
+                mobileTable.classList.add('hidden');
+            }
+        }
+        
+        // Load tenants for dropdown
+        async function loadTenants() {
+            try {
+                const { data: tenants, error } = await supabase
+                    .from('tenants')
+                    .select('id, name, monthly_rent, rent_due_day, status')
+                    .eq('user_id', currentUser.id)
+                    .order('name');
+                
+                if (error) throw error;
+                
+                allTenants = tenants || [];
+                
+                // Update tenant dropdown
+                const select = document.getElementById('selectTenant');
+                select.innerHTML = '<option value="">Select a tenant...</option>';
+                
+                tenants.forEach(tenant => {
+                    const status = tenant.status === 'active' ? 'Active' : 
+                                  tenant.status === 'moved_out' ? 'Moved Out' : 'Left';
+                    
+                    select.innerHTML += `
+                        <option value="${tenant.id}">
+                            ${tenant.name} (${status}) - ₱${parseFloat(tenant.monthly_rent).toLocaleString('en-PH')}
+                        </option>
+                    `;
+                });
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+            }
+        }
+        
+        // Load general ledger entries
+        async function loadGeneralLedger() {
+            try {
+                const { data: ledgerEntries, error } = await supabase
+                    .from('ledger_entries')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('user_id', currentUser.id)
+                    .order('entry_date', { ascending: false })
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allLedgerEntries = ledgerEntries || [];
+                filterGeneralLedger();
+                
+            } catch (error) {
+                console.error('Error loading ledger entries:', error);
+            }
+        }
+        
+        // ============================================
+        // GENERAL LEDGER FUNCTIONS
+        // ============================================
+        
+        // Switch between general and tenant views
+        function switchView(view) {
+            currentView = view;
+            
+            const generalView = document.getElementById('generalLedgerView');
+            const tenantView = document.getElementById('tenantLedgerView');
+            const generalBtn = document.getElementById('viewGeneral');
+            const tenantBtn = document.getElementById('viewTenant');
+            
+            if (view === 'general') {
+                generalView.style.display = 'block';
+                tenantView.style.display = 'none';
+                generalBtn.className = 'btn btn-primary';
+                tenantBtn.className = 'btn btn-outline';
+            } else {
+                generalView.style.display = 'none';
+                tenantView.style.display = 'block';
+                generalBtn.className = 'btn btn-outline';
+                tenantBtn.className = 'btn btn-primary';
+            }
+        }
+        
+        // Filter general ledger
+        function filterGeneralLedger() {
+            const type = document.getElementById('filterType').value;
+            const category = document.getElementById('filterCategory').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            
+            let filtered = allLedgerEntries;
+            
+            if (type) {
+                filtered = filtered.filter(entry => entry.type === type);
+            }
+            
+            if (category) {
+                filtered = filtered.filter(entry => entry.category === category);
+            }
+            
+            if (dateFrom) {
+                filtered = filtered.filter(entry => entry.entry_date >= dateFrom);
+            }
+            
+            if (dateTo) {
+                filtered = filtered.filter(entry => entry.entry_date <= dateTo);
+            }
+            
+            updateGeneralLedgerTable(filtered);
+            updateGeneralSummary(filtered);
+        }
+        
+        // Reset general filters
+        function resetGeneralFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            filterGeneralLedger();
+        }
+        
+        // Update general ledger table
+        function updateGeneralLedgerTable(entries) {
+            const tbody = document.getElementById('generalLedgerTableBody');
+            
+            if (entries.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            No ledger entries found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Sort by date (chronological)
+            entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+            
+            let html = '';
+            entries.forEach(entry => {
+                const date = new Date(entry.entry_date);
+                
+                // Type styling
+                let typeClass, typeText;
+                if (entry.type === 'charge') {
+                    typeClass = 'status-moved-out';
+                    typeText = 'Charge';
+                } else {
+                    typeClass = 'status-active';
+                    typeText = 'Payment';
+                }
+                
+                // Category styling
+                let categoryClass;
+                if (entry.category === 'rent') categoryClass = 'status-active';
+                else if (entry.category === 'electric') categoryClass = 'status-moved-out';
+                else if (entry.category === 'water') categoryClass = 'status-left';
+                else categoryClass = '';
+                
+                // Amount styling
+                const amountClass = entry.type === 'charge' ? 'currency-negative' : 'currency-positive';
+                const amountSign = entry.type === 'charge' ? '-' : '+';
+                
+                html += `
+                    <tr onclick="showTransactionDetails('${entry.id}')" style="cursor: pointer;">
+                        <td>${date.toLocaleDateString('en-PH')}</td>
+                        <td>${entry.tenants?.name || 'N/A'}</td>
+                        <td>
+                            <span class="status-pill ${typeClass}">
+                                ${typeText}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-pill ${categoryClass}">
+                                ${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}
+                            </span>
+                        </td>
+                        <td>${entry.description || ''}</td>
+                        <td class="currency ${amountClass}">
+                            ${amountSign}₱${parseFloat(entry.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td class="currency">
+                            ₱${entry.running_balance ? parseFloat(entry.running_balance).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update general ledger summary
+        function updateGeneralSummary(entries = allLedgerEntries) {
+            let totalCharges = 0;
+            let totalPayments = 0;
+            
+            entries.forEach(entry => {
+                const amount = parseFloat(entry.amount);
+                if (entry.type === 'charge') {
+                    totalCharges += amount;
+                } else {
+                    totalPayments += amount;
+                }
+            });
+            
+            const netBalance = totalCharges - totalPayments;
+            
+            document.getElementById('totalCharges').textContent = 
+                '₱' + totalCharges.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('totalPayments').textContent = 
+                '₱' + totalPayments.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            
+            const netBalanceElement = document.getElementById('netBalance');
+            netBalanceElement.textContent = 
+                '₱' + Math.abs(netBalance).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            
+            if (netBalance > 0) {
+                netBalanceElement.className = 'stat-number currency-negative';
+            } else if (netBalance < 0) {
+                netBalanceElement.className = 'stat-number currency-positive';
+            } else {
+                netBalanceElement.className = 'stat-number';
+            }
+        }
+        
+        // ============================================
+        // TENANT LEDGER FUNCTIONS
+        // ============================================
+        
+        // Load tenant ledger
+        async function loadTenantLedger() {
+            const tenantId = document.getElementById('selectTenant').value;
+            const dateFrom = document.getElementById('tenantDateFrom').value;
+            const dateTo = document.getElementById('tenantDateTo').value;
+            
+            if (!tenantId) {
+                document.getElementById('tenantInfoCard').style.display = 'none';
+                document.getElementById('tenantLedgerTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            Select a tenant to view their ledger.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('mobileTenantLedgerBody').innerHTML = `
+                    <tr>
+                        <td style="text-align: center; padding: 2rem;">
+                            Select a tenant to view their ledger.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            selectedTenantId = tenantId;
+            
+            try {
+                // Load tenant info
+                const { data: tenant, error: tenantError } = await supabase
+                    .from('tenants')
+                    .select('*')
+                    .eq('id', tenantId)
+                    .single();
+                
+                if (tenantError) throw tenantError;
+                
+                // Update tenant info card
+                document.getElementById('tenantInfoCard').style.display = 'block';
+                document.getElementById('tenantName').textContent = tenant.name;
+                document.getElementById('tenantDetails').textContent = 
+                    `Monthly rent: ₱${parseFloat(tenant.monthly_rent).toLocaleString('en-PH')} | Due day: ${tenant.rent_due_day}th`;
+                
+                // Load tenant's ledger entries
+                let query = supabase
+                    .from('ledger_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('tenant_id', tenantId)
+                    .order('entry_date', { ascending: true }) // Chronological for running balance
+                    .order('created_at', { ascending: true });
+                
+                if (dateFrom) {
+                    query = query.gte('entry_date', dateFrom);
+                }
+                
+                if (dateTo) {
+                    query = query.lte('entry_date', dateTo);
+                }
+                
+                const { data: ledgerEntries, error: ledgerError } = await query;
+                
+                if (ledgerError) throw ledgerError;
+                
+                updateTenantLedgerTables(tenant, ledgerEntries || []);
+                updateTenantLedgerSubtitle(dateFrom, dateTo);
+                
+            } catch (error) {
+                console.error('Error loading tenant ledger:', error);
+                alert('Failed to load tenant ledger');
+            }
+        }
+        
+        // Reset tenant filters
+        function resetTenantFilters() {
+            document.getElementById('tenantDateFrom').value = '';
+            document.getElementById('tenantDateTo').value = '';
+            loadTenantLedger();
+        }
+        
+        // Update tenant ledger tables
+        function updateTenantLedgerTables(tenant, entries) {
+            // Update subtitle
+            const subtitle = document.getElementById('tenantLedgerSubtitle');
+            subtitle.textContent = entries.length > 0 ? 
+                `${entries.length} transactions with running balance` : 
+                'No transactions found';
+            
+            // Update current balance
+            const lastEntry = entries[entries.length - 1];
+            const currentBalance = lastEntry ? parseFloat(lastEntry.running_balance) : 0;
+            
+            const balanceElement = document.getElementById('tenantCurrentBalance');
+            balanceElement.textContent = 
+                '₱' + Math.abs(currentBalance).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            
+            if (currentBalance > 0) {
+                balanceElement.className = 'stat-number currency-negative';
+                document.getElementById('tenantBalanceStatus').textContent = 'Balance Due';
+                document.getElementById('tenantBalanceStatus').className = 'stat-trend';
+            } else if (currentBalance < 0) {
+                balanceElement.className = 'stat-number currency-positive';
+                document.getElementById('tenantBalanceStatus').textContent = 'Credit Balance';
+                document.getElementById('tenantBalanceStatus').className = 'stat-trend';
+            } else {
+                balanceElement.className = 'stat-number';
+                document.getElementById('tenantBalanceStatus').textContent = 'Paid in Full';
+                document.getElementById('tenantBalanceStatus').className = 'stat-trend';
+            }
+            
+            // Update desktop table
+            const desktopTbody = document.getElementById('tenantLedgerTableBody');
+            const mobileTbody = document.getElementById('mobileTenantLedgerBody');
+            
+            if (entries.length === 0) {
+                desktopTbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">
+                            No transactions found for this period.
+                        </td>
+                    </tr>
+                `;
+                mobileTbody.innerHTML = `
+                    <tr>
+                        <td style="text-align: center; padding: 2rem;">
+                            No transactions found for this period.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let desktopHtml = '';
+            let mobileHtml = '';
+            let runningBalance = 0;
+            
+            entries.forEach(entry => {
+                const date = new Date(entry.entry_date);
+                
+                // Type styling
+                let typeClass, typeText;
+                if (entry.type === 'charge') {
+                    typeClass = 'status-moved-out';
+                    typeText = 'Charge';
+                } else {
+                    typeClass = 'status-active';
+                    typeText = 'Payment';
+                }
+                
+                // Category styling
+                let categoryClass;
+                if (entry.category === 'rent') categoryClass = 'status-active';
+                else if (entry.category === 'electric') categoryClass = 'status-moved-out';
+                else if (entry.category === 'water') categoryClass = 'status-left';
+                else categoryClass = '';
+                
+                // Amounts
+                const chargeAmount = entry.type === 'charge' ? 
+                    `₱${parseFloat(entry.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : '-';
+                const paymentAmount = entry.type === 'payment' ? 
+                    `₱${parseFloat(entry.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : '-';
+                
+                runningBalance = parseFloat(entry.running_balance);
+                
+                // Desktop row
+                desktopHtml += `
+                    <tr onclick="showTransactionDetails('${entry.id}')" style="cursor: pointer;">
+                        <td>${date.toLocaleDateString('en-PH')}</td>
+                        <td>
+                            <span class="status-pill ${typeClass}">
+                                ${typeText}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-pill ${categoryClass}">
+                                ${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}
+                            </span>
+                        </td>
+                        <td>${entry.description || ''}</td>
+                        <td class="currency ${entry.type === 'charge' ? 'currency-negative' : ''}">
+                            ${chargeAmount}
+                        </td>
+                        <td class="currency ${entry.type === 'payment' ? 'currency-positive' : ''}">
+                            ${paymentAmount}
+                        </td>
+                        <td class="currency">
+                            ₱${runningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                    </tr>
+                `;
+                
+                // Mobile row
+                mobileHtml += `
+                    <tr onclick="showTransactionDetails('${entry.id}')" style="cursor: pointer;">
+                        <td data-label="Transaction">
+                            <div style="margin-bottom: 1rem;">
+                                <strong>${date.toLocaleDateString('en-PH')}</strong>
+                                <span class="status-pill ${typeClass}" style="margin-left: 0.5rem;">
+                                    ${typeText}
+                                </span>
+                            </div>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <div><strong>Category:</strong> ${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}</div>
+                                <div><strong>Description:</strong> ${entry.description || ''}</div>
+                                <div><strong>${entry.type === 'charge' ? 'Charge' : 'Payment'}:</strong> 
+                                    <span class="${entry.type === 'charge' ? 'currency-negative' : 'currency-positive'}">
+                                        ₱${parseFloat(entry.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                                <div><strong>Balance:</strong> 
+                                    <span class="currency">
+                                        ₱${runningBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            desktopTbody.innerHTML = desktopHtml;
+            mobileTbody.innerHTML = mobileHtml;
+        }
+        
+        // Update tenant ledger subtitle
+        function updateTenantLedgerSubtitle(dateFrom, dateTo) {
+            const subtitle = document.getElementById('tenantLedgerSubtitle');
+            let dateRange = '';
+            
+            if (dateFrom && dateTo) {
+                dateRange = ` from ${new Date(dateFrom).toLocaleDateString('en-PH')} to ${new Date(dateTo).toLocaleDateString('en-PH')}`;
+            } else if (dateFrom) {
+                dateRange = ` from ${new Date(dateFrom).toLocaleDateString('en-PH')}`;
+            } else if (dateTo) {
+                dateRange = ` until ${new Date(dateTo).toLocaleDateString('en-PH')}`;
+            }
+            
+            subtitle.textContent = `Tenant ledger${dateRange}`;
+        }
+        
+        // ============================================
+        // TRANSACTION DETAILS MODAL
+        // ============================================
+        async function showTransactionDetails(entryId) {
+            try {
+                const { data: entry, error } = await supabase
+                    .from('ledger_entries')
+                    .select(`
+                        *,
+                        tenants(name)
+                    `)
+                    .eq('id', entryId)
+                    .single();
+                
+                if (error) throw error;
+                
+                const date = new Date(entry.entry_date);
+                
+                // Update modal content
+                document.getElementById('transactionTitle').textContent = 
+                    `${entry.type === 'charge' ? 'Charge' : 'Payment'} - ${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}`;
+                document.getElementById('transactionDate').textContent = 
+                    `Date: ${date.toLocaleDateString('en-PH')}`;
+                document.getElementById('transactionTenant').textContent = 
+                    entry.tenants?.name || 'N/A';
+                
+                // Type badge
+                const typeBadge = document.getElementById('transactionType');
+                typeBadge.textContent = entry.type === 'charge' ? 'Charge' : 'Payment';
+                typeBadge.className = `status-pill ${entry.type === 'charge' ? 'status-moved-out' : 'status-active'}`;
+                
+                // Category badge
+                const categoryBadge = document.getElementById('transactionCategory');
+                categoryBadge.textContent = entry.category.charAt(0).toUpperCase() + entry.category.slice(1);
+                if (entry.category === 'rent') categoryBadge.className = 'status-pill status-active';
+                else if (entry.category === 'electric') categoryBadge.className = 'status-pill status-moved-out';
+                else if (entry.category === 'water') categoryBadge.className = 'status-pill status-left';
+                else categoryBadge.className = 'status-pill';
+                
+                // Amount
+                const amountElement = document.getElementById('transactionAmount');
+                amountElement.textContent = 
+                    `${entry.type === 'charge' ? '-' : '+'}₱${parseFloat(entry.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                amountElement.className = `currency ${entry.type === 'charge' ? 'currency-negative' : 'currency-positive'}`;
+                
+                document.getElementById('transactionDescription').textContent = entry.description || 'No description';
+                document.getElementById('transactionBalance').textContent = 
+                    `₱${entry.running_balance ? parseFloat(entry.running_balance).toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '0.00'}`;
+                
+                // Show notes if available
+                const notesSection = document.getElementById('transactionNotes');
+                const notesContent = document.getElementById('transactionNotesContent');
+                if (entry.notes) {
+                    notesContent.textContent = entry.notes;
+                    notesSection.style.display = 'block';
+                } else {
+                    notesSection.style.display = 'none';
+                }
+                
+                document.getElementById('transactionModal').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading transaction details:', error);
+                alert('Failed to load transaction details');
+            }
+        }
+        
+        // ============================================
+        // EXPORT & PRINT FUNCTIONS
+        // ============================================
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            if (currentView === 'general') {
+                // Export general ledger
+                csvContent += "Date,Tenant,Type,Category,Description,Amount,Balance\n";
+                
+                const entries = allLedgerEntries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+                entries.forEach(entry => {
+                    const date = new Date(entry.entry_date);
+                    const row = [
+                        date.toLocaleDateString('en-PH'),
+                        entry.tenants?.name || 'N/A',
+                        entry.type === 'charge' ? 'Charge' : 'Payment',
+                        entry.category,
+                        `"${entry.description || ''}"`,
+                        `${entry.type === 'charge' ? '-' : ''}${parseFloat(entry.amount).toFixed(2)}`,
+                        parseFloat(entry.running_balance || 0).toFixed(2)
+                    ];
+                    csvContent += row.join(",") + "\n";
+                });
+            } else {
+                // Export tenant
