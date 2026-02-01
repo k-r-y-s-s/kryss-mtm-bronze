@@ -49,16 +49,21 @@
     </div>
     
     <script>
-        // Initialize Supabase - FIXED: Changed supabaseClient to supabase
+        // Supabase is already loaded from the CDN
+        // We just need to initialize it with our credentials
+        
         const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Initialize Supabase client
+        // Use a different variable name to avoid conflict
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         
         // Hide loading screen initially
         document.getElementById('loadingScreen').classList.add('hidden');
         
         // Check if already logged in
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 // If already logged in, show loading and redirect
                 document.getElementById('loadingScreen').classList.remove('hidden');
@@ -81,7 +86,7 @@
                 // Show loading immediately
                 document.getElementById('loadingScreen').classList.remove('hidden');
                 
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
@@ -104,12 +109,6 @@
                 alert('Login failed: ' + error.message);
                 console.error("Login error:", error);
             }
-        });
-        
-        // Add error handling for uncaught errors
-        window.addEventListener('error', function(event) {
-            console.error("Global error caught:", event.error);
-            alert("An error occurred. Check console for details.");
         });
     </script>
 </body>
