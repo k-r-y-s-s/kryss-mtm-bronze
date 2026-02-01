@@ -5,156 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Tenant Manager - Bronze Tier</title>
     <link rel="stylesheet" href="style.css">
+    <!-- REMOVED Supabase script since index.html doesn't need it -->
 </head>
 <body>
-    <div class="hero">
-        <h1>My Tenant Manager</h1>
-        <p>Bronze Tier - For Cebu Landlords</p>
-        
-        <div class="cta-buttons">
-            <a href="login.html" class="btn btn-primary">Login</a>
-            <a href="signup.html" class="btn btn-secondary">Start 7-Day Free Trial</a>
-        </div>
-    </div>
-    
-    <div class="features">
-        <h2>Professional Rental Management Made Simple</h2>
-        <p>Designed specifically for Cebu landlords who want a reliable, straightforward way to manage tenants, rent, utilities, payments, and ledgers.</p>
-        
-        <div class="feature-grid">
-            <div class="feature-card">
-                <h3>Single Landlord Account</h3>
-                <p>Perfect for individual landlords. No complex multi-user setups.</p>
+    <div class="container">
+        <header class="header">
+            <h1>My Tenant Manager</h1>
+            <p class="subtitle">Bronze Tier - For Cebu Landlords</p>
+            <div class="nav-buttons">
+                <a href="login.html" class="btn btn-outline">Login</a>
+                <a href="signup.html" class="btn btn-primary">Start 7-Day Free Trial</a>
             </div>
-            
-            <div class="feature-card">
-                <h3>Manual/Semi-Automated</h3>
-                <p>Clear workflows that you control. No unexpected automation.</p>
-            </div>
-        </div>
+        </header>
+
+        <main class="main-content">
+            <section class="hero">
+                <h2>Professional Rental Management Made Simple</h2>
+                <p class="hero-description">
+                    Designed specifically for Cebu landlords who want a reliable, straightforward way to 
+                    manage tenants, rent, utilities, payments, and ledgers.
+                </p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Single Landlord Account</h3>
+                        <p>Perfect for individual landlords. No complex multi-user setups.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h3>Manual/Semi-Automated</h3>
+                        <p>Clear workflows that you control. No unexpected automation.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>© 2024 My Tenant Manager - Bronze Tier</p>
+        </footer>
     </div>
 
     <script>
-        // Simple landing page - no Supabase needed
-        console.log("Landing page loaded");
-    </script>
-</body>
-</html>            padding: 15px 30px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
+        // NO SUPABASE CODE NEEDED - This is just a landing page
+        console.log("My Tenant Manager - Landing Page Loaded");
         
-        .btn-primary {
-            background: white;
-            color: #667eea;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-        
-        .features {
-            max-width: 1000px;
-            margin: 60px auto;
-            padding: 0 20px;
-        }
-        
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-        
-        .feature-card {
-            padding: 30px;
-            border-radius: 10px;
-            background: #f8f9fa;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        
-        .feature-card h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        
-        .feature-card p {
-            color: #666;
-            line-height: 1.6;
-        }
-    </style>
-</head>
-<body>
-    <!-- Hero Section -->
-    <div class="hero">
-        <h1>My Tenant Manager</h1>
-        <p>Bronze Tier - For Cebu Landlords</p>
-        
-        <div class="cta-buttons">
-            <a href="login.html" class="btn btn-primary">Login</a>
-            <a href="signup.html" class="btn btn-secondary">Start 7-Day Free Trial</a>
-        </div>
-    </div>
-    
-    <!-- Features Section -->
-    <div class="features">
-        <h2 style="text-align: center; margin-bottom: 20px;">Professional Rental Management Made Simple</h2>
-        <p style="text-align: center; color: #666; max-width: 800px; margin: 0 auto 40px;">
-            Designed specifically for Cebu landlords who want a reliable, straightforward way to manage tenants, rent, utilities, payments, and ledgers.
-        </p>
-        
-        <div class="feature-grid">
-            <div class="feature-card">
-                <h3>Single Landlord Account</h3>
-                <p>Perfect for individual landlords. No complex multi-user setups.</p>
-            </div>
-            
-            <div class="feature-card">
-                <h3>Manual/Semi-Automated</h3>
-                <p>Clear workflows that you control. No unexpected automation.</p>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // If index.html needs Supabase (for checking login status)
-        // Use the SAME fix as login.html
-        
-        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
-        
-        // Initialize Supabase client with DIFFERENT variable name
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        
-        // Optional: Check if user is already logged in and redirect
-        // Uncomment if you want this functionality
-        /*
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                // If already logged in, redirect to dashboard
-                window.location.href = 'dashboard.html';
-            }
-        }).catch(error => {
-            console.error("Session check error:", error);
+        // Optional: Add any animations or interactions you had
+        document.addEventListener('DOMContentLoaded', function() {
+            // Your original animations/interactions here
         });
-        */
-        
-        // Alternative: If index.html doesn't need Supabase at all, 
-        // remove ALL the code above and keep only:
-        // <script>
-        // // No Supabase needed for landing page
-        // </script>
-        
-        console.log("Index page loaded successfully");
     </script>
 </body>
 </html>
