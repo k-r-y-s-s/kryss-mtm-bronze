@@ -59,6 +59,849 @@
                 <h1>👥 Tenants Management</h1>
                 <p class="small-text">Core feature - Add, edit, and manage all tenants</p>
             </div>
+            <button onclick="startAddTenantFlow()" class="btn btn-primary">
+                ＋ Add New Tenant
+            </button>
+        </div>
+        
+        <!-- DESKTOP: Table Layout -->
+        <div class="table-container" id="desktopTable">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Monthly Rent</th>
+                        <th>Due Day</th>
+                        <th>Utilities</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tenantsTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            Loading tenants...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- MOBILE: Stacked Layout -->
+        <div class="table-container mobile-stacked hidden" id="mobileTable">
+            <table class="data-table">
+                <tbody id="mobileTenantsTableBody">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 1: DATA CONSENT WARNING (First Step as Specified)
+         ============================================ -->
+    <div class="modal-overlay hidden" id="consentModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+                <h3>⚠️ Data Consent Required</h3>
+                <button class="close-modal" onclick="closeConsentModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="consent-warning">
+                    <h4>Philippine Data Privacy Act of 2012 Compliance</h4>
+                    <p><strong>Important:</strong> Before adding a tenant, you must confirm:</p>
+                    <ul>
+                        <li>You have obtained consent from the tenant to collect their personal information</li>
+                        <li>You will use this data only for rental management purposes</li>
+                        <li>You will implement reasonable security measures to protect this data</li>
+                        <li>You understand your obligations under the Data Privacy Act</li>
+                    </ul>
+                    <p><strong>For Cebu Landlords:</strong> This applies to all rental agreements in Cebu City.</p>
+                </div>
+                
+                <div style="padding: 1rem; background: #f9fafb; border-radius: 0.375rem; margin: 1.5rem 0;">
+                    <label style="display: flex; align-items: start; gap: 0.5rem;">
+                        <input type="checkbox" id="confirmConsent" required style="margin-top: 0.25rem;">
+                        <div>
+                            <strong>I confirm that I have obtained proper consent</strong>
+                            <p class="small-text" style="margin-top: 0.25rem;">
+                                I have the legal right to collect and store this tenant information for rental management purposes.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeConsentModal()">
+                        Cancel (Do Not Save)
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="proceedToTenantForm()" id="consentContinueBtn" disabled>
+                        I Confirm & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 2: CONFIRMATION STEP (Second Step as Specified)
+         ============================================ -->
+    <div class="modal-overlay hidden" id="confirmationModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Confirmation Step</h3>
+                <button class="close-modal" onclick="closeConfirmationModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="font-size: 48px; margin-bottom: 1rem;">📋</div>
+                    <h4>Ready to Add Tenant?</h4>
+                    <p>You've confirmed data consent. You can:</p>
+                </div>
+                
+                <div style="background: #f0f9ff; border-radius: 0.5rem; padding: 1.5rem; margin: 1.5rem 0; border: 1px solid #bae6fd;">
+                    <h5 style="margin-top: 0; color: #0369a1;">Next: Tenant Information Form</h5>
+                    <p class="small-text">You'll be asked to enter:</p>
+                    <ul style="margin: 0.5rem 0 0 1.5rem;">
+                        <li>Tenant's personal information</li>
+                        <li>Monthly rent amount</li>
+                        <li>Rent due date</li>
+                        <li>Utilities coverage (Water, Electric, Wi-Fi)</li>
+                        <li>Status selection</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="goBackToConsent()">
+                        ← Back
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="proceedToFinalForm()">
+                        Next: Enter Tenant Details →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 3: ADD/EDIT TENANT FORM (Final Step as Specified)
+         ============================================ -->
+    <div class="modal-overlay hidden" id="tenantModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Tenant</h3>
+                <button class="close-modal" onclick="closeTenantModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="tenantForm">
+                    <input type="hidden" id="tenantId">
+                    
+                    <!-- Progress indicator -->
+                    <div style="display: flex; align-items: center; margin-bottom: 2rem; padding: 0.5rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <div style="display: flex; align-items: center; margin-right: 1rem;">
+                            <div style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">1</div>
+                            <span style="margin-left: 0.5rem; font-weight: 500;">Consent</span>
+                        </div>
+                        <div style="flex: 1; height: 2px; background: #3b82f6;"></div>
+                        <div style="display: flex; align-items: center; margin: 0 1rem;">
+                            <div style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">2</div>
+                            <span style="margin-left: 0.5rem; font-weight: 500;">Confirm</span>
+                        </div>
+                        <div style="flex: 1; height: 2px; background: #3b82f6;"></div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">3</div>
+                            <span style="margin-left: 0.5rem; font-weight: 600;">Details</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tenantName">Full Name *</label>
+                            <input type="text" id="tenantName" required placeholder="Juan Dela Cruz">
+                        </div>
+                        <div class="form-group">
+                            <label for="monthlyRent">Monthly Rent (₱) *</label>
+                            <input type="number" id="monthlyRent" required min="0" step="0.01" placeholder="5000.00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rentDueDay">Rent Due Day (1-31) *</label>
+                            <input type="number" id="rentDueDay" required min="1" max="31" placeholder="15">
+                        </div>
+                        <div class="form-group">
+                            <label for="tenantStatus">Status *</label>
+                            <select id="tenantStatus" required>
+                                <option value="active">Active</option>
+                                <option value="moved_out">Moved Out</option>
+                                <option value="left_without_notice">Left Without Notice</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Conditional Fields for Status -->
+                    <div id="statusConditionalFields" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #fef3c7; border-radius: 0.375rem;">
+                        <!-- Will be shown based on status selection -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Utilities Assigned *</label>
+                        <p class="small-text">Select utilities this tenant is responsible for:</p>
+                        <div class="checkbox-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="hasElectric" value="electric">
+                                <div>
+                                    <div style="font-weight: 500;">⚡ Electric</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="hasWater" value="water">
+                                <div>
+                                    <div style="font-weight: 500;">💧 Water</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid #ddd; border-radius: 0.375rem;">
+                                <input type="checkbox" id="hasWifi" value="wifi">
+                                <div>
+                                    <div style="font-weight: 500;">📶 Wi-Fi</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tenantNotes">Notes</label>
+                        <textarea id="tenantNotes" rows="3" placeholder="Additional information about the tenant..."></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="goBackToConfirmation()">
+                            ← Back
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                            Save Tenant
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MODAL 4: DELETE CONFIRMATION
+         ============================================ -->
+    <div class="modal-overlay hidden" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Delete Tenant</h3>
+                <button class="close-modal" onclick="closeDeleteModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <p><strong>Warning:</strong> Deleting this tenant will also remove:</p>
+                <ul style="margin: 1rem 0 1rem 1.5rem;">
+                    <li>All utility records for this tenant</li>
+                    <li>All rent charges for this tenant</li>
+                    <li>All payment records for this tenant</li>
+                    <li>All ledger entries for this tenant</li>
+                </ul>
+                <p>This action cannot be undone.</p>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" style="background: #dc2626;" onclick="confirmDeleteTenant()">
+                        Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Supabase - FIXED: Changed variable name to avoid conflict
+        const supabaseUrl = 'https://hnjlrjtiomdqcqznkuxh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuamxyanRpb21kcWNxem5rdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NDQ5MTUsImV4cCI6MjA4NTQyMDkxNX0.iW9E91LYLNSkpjiITNcXa7Zj1rpcw8euriHkgfQ19dQ';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        let currentTenantId = null;
+        let tenantToDeleteId = null;
+        
+        // Check authentication
+        supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                await loadTenants();
+                
+                // Setup mobile/desktop view based on screen size
+                setupResponsiveTables();
+                window.addEventListener('resize', setupResponsiveTables);
+                
+                // Setup checkbox listener for consent modal
+                document.getElementById('confirmConsent').addEventListener('change', function() {
+                    document.getElementById('consentContinueBtn').disabled = !this.checked;
+                });
+                
+                // Setup status change listener
+                document.getElementById('tenantStatus').addEventListener('change', updateConditionalFields);
+                
+                // Setup form submission
+                document.getElementById('tenantForm').addEventListener('submit', handleTenantFormSubmit);
+            }
+        });
+        
+        // Setup responsive tables (Desktop: Table, Mobile: Stacked)
+        function setupResponsiveTables() {
+            const desktopTable = document.getElementById('desktopTable');
+            const mobileTable = document.getElementById('mobileTable');
+            
+            if (window.innerWidth <= 1024) {
+                // Mobile view
+                desktopTable.classList.add('hidden');
+                mobileTable.classList.remove('hidden');
+            } else {
+                // Desktop view
+                desktopTable.classList.remove('hidden');
+                mobileTable.classList.add('hidden');
+            }
+        }
+        
+        // ============================================
+        // ADD TENANT FLOW (STRICT 3-STEP ORDER as specified)
+        // ============================================
+        
+        // STEP 0: Start the flow (click Add New Tenant button)
+        function startAddTenantFlow() {
+            currentTenantId = null;
+            document.getElementById('confirmConsent').checked = false;
+            document.getElementById('consentContinueBtn').disabled = true;
+            document.getElementById('consentModal').classList.remove('hidden');
+        }
+        
+        // STEP 1: Consent Modal Functions
+        function closeConsentModal() {
+            document.getElementById('consentModal').classList.add('hidden');
+        }
+        
+        function proceedToTenantForm() {
+            if (!document.getElementById('confirmConsent').checked) {
+                alert('Please confirm you have obtained consent from the tenant.');
+                return;
+            }
+            closeConsentModal();
+            document.getElementById('confirmationModal').classList.remove('hidden');
+        }
+        
+        // STEP 2: Confirmation Modal Functions
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.add('hidden');
+        }
+        
+        function goBackToConsent() {
+            closeConfirmationModal();
+            document.getElementById('consentModal').classList.remove('hidden');
+        }
+        
+        function proceedToFinalForm() {
+            closeConfirmationModal();
+            showTenantForm();
+        }
+        
+        // STEP 3: Tenant Form Functions
+        function showTenantForm() {
+            resetTenantForm();
+            document.getElementById('modalTitle').textContent = currentTenantId ? 'Edit Tenant' : 'Add New Tenant';
+            document.getElementById('modalSubmitBtn').textContent = currentTenantId ? 'Update Tenant' : 'Save Tenant';
+            document.getElementById('tenantModal').classList.remove('hidden');
+        }
+        
+        function closeTenantModal() {
+            document.getElementById('tenantModal').classList.add('hidden');
+            resetTenantForm();
+        }
+        
+        function goBackToConfirmation() {
+            closeTenantModal();
+            document.getElementById('confirmationModal').classList.remove('hidden');
+        }
+        
+        function resetTenantForm() {
+            document.getElementById('tenantForm').reset();
+            document.getElementById('tenantId').value = '';
+            document.getElementById('statusConditionalFields').style.display = 'none';
+            document.getElementById('statusConditionalFields').innerHTML = '';
+        }
+        
+        // Update conditional fields based on status
+        function updateConditionalFields() {
+            const status = document.getElementById('tenantStatus').value;
+            const container = document.getElementById('statusConditionalFields');
+            
+            if (status === 'moved_out') {
+                container.style.display = 'block';
+                container.innerHTML = `
+                    <h5 style="margin-top: 0; color: #7c3aed;">Moved Out Details</h5>
+                    <p class="small-text">Please provide move-out details:</p>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label for="moveOutDate">Move Out Date</label>
+                        <input type="date" id="moveOutDate">
+                    </div>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label for="moveOutReason">Reason for Moving Out</label>
+                        <textarea id="moveOutReason" rows="2" placeholder="Optional reason..."></textarea>
+                    </div>
+                `;
+            } else if (status === 'left_without_notice') {
+                container.style.display = 'block';
+                container.innerHTML = `
+                    <h5 style="margin-top: 0; color: #dc2626;">Left Without Notice</h5>
+                    <p class="small-text" style="color: #dc2626;">⚠️ This tenant left without proper notice:</p>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label for="lastSeenDate">Last Seen/Contact Date</label>
+                        <input type="date" id="lastSeenDate">
+                    </div>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label for="leftNotes">Additional Notes</label>
+                        <textarea id="leftNotes" rows="2" placeholder="Any details about the situation..."></textarea>
+                    </div>
+                `;
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
+        // ============================================
+        // LOAD AND DISPLAY TENANTS
+        // ============================================
+        
+        // Load tenants
+        async function loadTenants() {
+            try {
+                const { data: tenants, error } = await supabaseClient
+                    .from('tenants')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                updateTenantsTable(tenants || []);
+                updateMobileTenantsTable(tenants || []);
+                
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+                showError('Failed to load tenants');
+            }
+        }
+        
+        // Update desktop table
+        function updateTenantsTable(tenants) {
+            const tbody = document.getElementById('tenantsTableBody');
+            
+            if (tenants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            No tenants yet. Click "Add New Tenant" to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            tenants.forEach(tenant => {
+                // Format utilities
+                let utilities = '';
+                if (tenant.has_electric) utilities += '⚡ ';
+                if (tenant.has_water) utilities += '💧 ';
+                if (tenant.has_wifi) utilities += '📶 ';
+                if (!utilities) utilities = 'None';
+                
+                // Status pill (EXACT colors as specified)
+                let statusClass, statusText;
+                if (tenant.status === 'active') {
+                    statusClass = 'status-active';
+                    statusText = 'Active';
+                } else if (tenant.status === 'moved_out') {
+                    statusClass = 'status-moved-out';
+                    statusText = 'Moved Out';
+                } else {
+                    statusClass = 'status-left';
+                    statusText = 'Left Without Notice';
+                }
+                
+                html += `
+                    <tr>
+                        <td><strong>${tenant.name}</strong></td>
+                        <td class="currency">₱${parseFloat(tenant.monthly_rent || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td>${tenant.rent_due_day}th of month</td>
+                        <td>${utilities}</td>
+                        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="action-btn edit" onclick="editTenant('${tenant.id}')">
+                                Edit
+                            </button>
+                            <button class="action-btn delete" onclick="showDeleteModal('${tenant.id}')">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update mobile stacked table
+        function updateMobileTenantsTable(tenants) {
+            const tbody = document.getElementById('mobileTenantsTableBody');
+            
+            if (tenants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="1" style="text-align: center; padding: 2rem;">
+                            No tenants yet. Click "Add New Tenant" to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            tenants.forEach(tenant => {
+                // Format utilities
+                let utilities = '';
+                if (tenant.has_electric) utilities += '⚡ ';
+                if (tenant.has_water) utilities += '💧 ';
+                if (tenant.has_wifi) utilities += '📶 ';
+                if (!utilities) utilities = 'None';
+                
+                // Status pill
+                let statusClass, statusText;
+                if (tenant.status === 'active') {
+                    statusClass = 'status-active';
+                    statusText = 'Active';
+                } else if (tenant.status === 'moved_out') {
+                    statusClass = 'status-moved-out';
+                    statusText = 'Moved Out';
+                } else {
+                    statusClass = 'status-left';
+                    statusText = 'Left Without Notice';
+                }
+                
+                html += `
+                    <tr>
+                        <td data-label="Tenant">
+                            <div style="margin-bottom: 1rem;">
+                                <strong>${tenant.name}</strong>
+                                <span class="status-pill ${statusClass}" style="margin-left: 0.5rem;">${statusText}</span>
+                            </div>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <div><strong>Rent:</strong> ₱${parseFloat(tenant.monthly_rent || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+                                <div><strong>Due Day:</strong> ${tenant.rent_due_day}th of month</div>
+                                <div><strong>Utilities:</strong> ${utilities}</div>
+                                <div style="margin-top: 0.5rem;">
+                                    <button class="action-btn edit" onclick="editTenant('${tenant.id}')" style="margin-right: 0.5rem;">
+                                        Edit
+                                    </button>
+                                    <button class="action-btn delete" onclick="showDeleteModal('${tenant.id}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // ============================================
+        // EDIT TENANT (Bypasses consent flow)
+        // ============================================
+        
+        async function editTenant(tenantId) {
+            try {
+                currentTenantId = tenantId;
+                
+                const { data: tenant, error } = await supabaseClient
+                    .from('tenants')
+                    .select('*')
+                    .eq('id', tenantId)
+                    .single();
+                
+                if (error) throw error;
+                
+                // Populate form
+                document.getElementById('tenantId').value = tenant.id;
+                document.getElementById('tenantName').value = tenant.name;
+                document.getElementById('monthlyRent').value = tenant.monthly_rent;
+                document.getElementById('rentDueDay').value = tenant.rent_due_day;
+                document.getElementById('tenantStatus').value = tenant.status;
+                document.getElementById('hasElectric').checked = tenant.has_electric;
+                document.getElementById('hasWater').checked = tenant.has_water;
+                document.getElementById('hasWifi').checked = tenant.has_wifi;
+                document.getElementById('tenantNotes').value = tenant.notes || '';
+                
+                // Update conditional fields
+                updateConditionalFields();
+                
+                // Show form directly (no consent for editing)
+                showTenantForm();
+                
+            } catch (error) {
+                console.error('Error loading tenant:', error);
+                alert('Failed to load tenant data');
+            }
+        }
+        
+        // ============================================
+        // HANDLE FORM SUBMISSION
+        // ============================================
+        
+        async function handleTenantFormSubmit(e) {
+            e.preventDefault();
+            
+            try {
+                const tenantData = {
+                    user_id: currentUser.id,
+                    name: document.getElementById('tenantName').value.trim(),
+                    monthly_rent: parseFloat(document.getElementById('monthlyRent').value),
+                    rent_due_day: parseInt(document.getElementById('rentDueDay').value),
+                    status: document.getElementById('tenantStatus').value,
+                    has_electric: document.getElementById('hasElectric').checked,
+                    has_water: document.getElementById('hasWater').checked,
+                    has_wifi: document.getElementById('hasWifi').checked,
+                    notes: document.getElementById('tenantNotes').value.trim(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                // Add conditional data
+                if (tenantData.status === 'moved_out') {
+                    const moveOutDate = document.getElementById('moveOutDate');
+                    const moveOutReason = document.getElementById('moveOutReason');
+                    if (moveOutDate && moveOutDate.value) {
+                        tenantData.move_out_date = moveOutDate.value;
+                    }
+                    if (moveOutReason && moveOutReason.value) {
+                        tenantData.move_out_reason = moveOutReason.value;
+                    }
+                }
+                
+                let result;
+                if (currentTenantId) {
+                    // Update existing tenant
+                    result = await supabaseClient
+                        .from('tenants')
+                        .update(tenantData)
+                        .eq('id', currentTenantId);
+                } else {
+                    // Create new tenant
+                    tenantData.created_at = new Date().toISOString();
+                    result = await supabaseClient
+                        .from('tenants')
+                        .insert([tenantData]);
+                }
+                
+                if (result.error) throw result.error;
+                
+                alert(currentTenantId ? 'Tenant updated successfully!' : 'Tenant added successfully!');
+                closeTenantModal();
+                await loadTenants();
+                
+            } catch (error) {
+                console.error('Error saving tenant:', error);
+                alert('Failed to save tenant: ' + error.message);
+            }
+        }
+        
+        // ============================================
+        // DELETE FUNCTIONALITY
+        // ============================================
+        
+        function showDeleteModal(tenantId) {
+            tenantToDeleteId = tenantId;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            tenantToDeleteId = null;
+        }
+        
+        async function confirmDeleteTenant() {
+            try {
+                // First, delete related records (utilities, payments, ledger entries)
+                // Note: This assumes proper foreign key constraints in Supabase
+                const { error } = await supabaseClient
+                    .from('tenants')
+                    .delete()
+                    .eq('id', tenantToDeleteId);
+                
+                if (error) throw error;
+                
+                alert('Tenant deleted successfully!');
+                closeDeleteModal();
+                await loadTenants();
+                
+            } catch (error) {
+                console.error('Error deleting tenant:', error);
+                alert('Failed to delete tenant: ' + error.message);
+            }
+        }
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+        
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(event.target) && 
+                event.target !== mobileBtn) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+    
+    <style>
+        /* Additional styles for the modals */
+        .modal {
+            background: white;
+            border-radius: 0.5rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.hidden {
+            display: none;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .close-modal:hover {
+            color: #374151;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .consent-warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</body>
+</html>            </a>
+            <a href="payments.html" class="nav-link">
+                <span class="nav-icon">💳</span>
+                <span>Payments</span>
+            </a>
+            <a href="ledger.html" class="nav-link">
+                <span class="nav-icon">📒</span>
+                <span>Ledger</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button onclick="logout()" class="btn btn-outline" style="width: 100%;">
+                🚪 Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>👥 Tenants Management</h1>
+                <p class="small-text">Core feature - Add, edit, and manage all tenants</p>
+            </div>
             <button onclick="showAddTenantModal()" class="btn btn-primary">
                 ＋ Add New Tenant
             </button>
